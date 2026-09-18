@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Open Text Compliance — Violation Log</title>
+<link rel="stylesheet" href="_shared.css" />
+<style>
+  /* --- violation-log specific --- */
+  .filters{display:flex;gap:16px;align-items:flex-end;padding:0 28px 14px;flex-wrap:wrap;}
+  .filters .field{min-width:170px;}
+  .filters .field label{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#706e6b;margin-bottom:4px;}
+  .filters .spacer{flex:1;}
+
+  /* severity pill */
+  .sev{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;border-radius:12px;padding:2px 9px;text-transform:uppercase;letter-spacing:.3px;}
+  .sev .sdot{width:7px;height:7px;border-radius:50%;}
+  .sev-critical{background:#fdeaea;color:#a11;border:1px solid #f3c9c9;} .sev-critical .sdot{background:#c23934;}
+  .sev-high{background:#fdf0e4;color:#8a4b00;border:1px solid #f2ddc2;} .sev-high .sdot{background:#dd7a01;}
+  .sev-medium{background:#fbf6e3;color:#6b5900;border:1px solid #eee2b0;} .sev-medium .sdot{background:#caa300;}
+  .sev-low{background:#eef1f4;color:#5c5c5c;border:1px solid #dde3e8;} .sev-low .sdot{background:#9aa5b1;}
+
+  /* disposition badge */
+  .disp{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;border-radius:3px;padding:2px 7px;}
+  .disp-pending{background:#fff4e5;color:#8a5a00;border:1px solid #f3dcb0;}
+  .disp-confirmed{background:#fdeaea;color:#a11;border:1px solid #f3c9c9;}
+  .disp-false{background:#eafaef;color:#1a7f3c;border:1px solid #c6ebd2;}
+
+  .snippet{color:#181818;}
+  .snippet mark{background:#ffe08a;color:#3a2c00;padding:0 2px;border-radius:2px;font-weight:600;}
+
+  /* KPI strip */
+  .kpis{display:flex;gap:14px;padding:4px 28px 16px;flex-wrap:wrap;}
+  .kpi{border:1px solid var(--border);border-radius:8px;padding:12px 16px;min-width:130px;background:#fff;}
+  .kpi .n{font-size:22px;font-weight:700;color:#080707;line-height:1;}
+  .kpi .l{font-size:11px;color:#706e6b;text-transform:uppercase;letter-spacing:.4px;margin-top:5px;}
+  .kpi.crit .n{color:#c23934;}
+
+  /* detail modal */
+  .dgrid{display:grid;grid-template-columns:130px 1fr;gap:10px 16px;font-size:12.5px;}
+  .dgrid .k{color:#706e6b;font-weight:600;}
+  .dgrid .v{color:#181818;}
+  .detail-block{border:1px solid var(--border);border-radius:6px;padding:14px 16px;margin-top:16px;}
+  .detail-block h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:#514f4d;}
+  .quote{background:#fafafa;border-left:3px solid #dd7a01;padding:10px 12px;border-radius:0 4px 4px 0;font-size:13px;line-height:1.5;}
+  .clause{background:#f4f8ff;border:1px solid #d6e2f5;border-radius:6px;padding:10px 12px;font-size:12.5px;color:#183a7a;}
+  .clause .src{display:block;color:#5c6b8a;font-size:11px;margin-top:6px;}
+  .rationale{font-size:12.5px;color:#181818;line-height:1.55;}
+  .disp-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;}
+  .btn.danger{background:#c23934;border-color:#c23934;color:#fff;}
+  .btn.good{background:#2e844a;border-color:#2e844a;color:#fff;}
+  .ro-note{font-size:11px;color:#8a8a8a;margin-top:10px;}
+  .runline{display:inline-flex;gap:6px;align-items:center;color:#5c5c5c;font-size:12px;}
+  .runline .tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;border-radius:3px;padding:1px 6px;border:1px solid #dde3e8;color:#5c6b8a;background:#f4f6f8;}
+</style>
+</head>
+<body>
+
+  <!-- global header -->
+  <header class="global-header">
+    <div class="logo"><span class="swirl"></span>Cumulus</div>
+    <div class="search-wrap"><input class="global-search" placeholder="Search..." /><button class="ask-btn"><span class="spark">✦</span> Ask</button></div>
+    <div class="header-icons"><span class="hicon">☺</span><span class="hicon">★</span><span class="hicon">＋</span><span class="hicon">☁</span><span class="hicon">?</span><span class="hicon">⚙</span><span class="hicon">🔔</span><span class="avatar">NP</span></div>
+  </header>
+
+  <!-- app nav -->
+  <nav class="app-nav">
+    <span class="app-name">Life Sciences Commercial</span>
+    <div class="nav-tabs">
+      <span class="nav-tab">Home</span><span class="nav-tab">Chatter</span>
+      <a class="nav-tab active" href="admin-console.html">Admin Console</a>
+      <span class="nav-tab">Accounts</span><span class="nav-tab">Calendar</span>
+      <span class="nav-tab">Visits <span class="caret">▾</span></span>
+      <span class="nav-tab">Intelligent Content</span>
+      <span class="nav-tab">Inquiries <span class="caret">▾</span></span>
+      <span class="nav-tab">Account Plans <span class="caret">▾</span></span>
+      <span class="nav-tab">More <span class="caret">▾</span></span>
+    </div>
+    <span class="nav-edit">✎</span>
+  </nav>
+
+  <div class="shell">
+    <aside class="rail">
+      <div class="rail-search"><input placeholder="Quick Find" /></div>
+      <a class="rail-item" href="compliance-settings.html">Compliance Settings</a>
+      <a class="rail-item" href="policies.html">Policies</a>
+      <a class="rail-item" href="monitored-fields.html">Monitored Fields</a>
+      <a class="rail-item active" href="violation-log.html">Violation Log</a>
+    </aside>
+
+    <main class="content">
+      <div class="setup-header">
+        <span class="setup-ic">🛡</span>
+        <div><div class="setup-eyebrow">Setup · Open Text Compliance</div><div class="setup-title">Violation Log</div></div>
+      </div>
+
+      <!-- KPI strip -->
+      <div class="kpis">
+        <div class="kpi crit"><div class="n" id="kpiPending">0</div><div class="l">Pending Review</div></div>
+        <div class="kpi"><div class="n" id="kpiConfirmed">0</div><div class="l">Confirmed</div></div>
+        <div class="kpi"><div class="n" id="kpiFalse">0</div><div class="l">False Positive</div></div>
+        <div class="kpi"><div class="n" id="kpiTotal">0</div><div class="l">Total (30 days)</div></div>
+      </div>
+
+      <!-- filters -->
+      <div class="filters">
+        <div class="field"><label>Severity</label>
+          <select class="selectbox" id="fSev" onchange="render()">
+            <option value="">All</option><option>Critical</option><option>High</option><option>Medium</option><option>Low</option>
+          </select></div>
+        <div class="field"><label>Disposition</label>
+          <select class="selectbox" id="fDisp" onchange="render()">
+            <option value="">All</option><option value="pending">Pending Review</option><option value="confirmed">Confirmed</option><option value="false">False Positive</option>
+          </select></div>
+        <div class="field"><label>Entity</label>
+          <select class="selectbox" id="fEntity" onchange="render()">
+            <option value="">All</option><option>Visit</option><option>Provider Visit</option><option>Call</option><option>Account</option><option>Medical Inquiry</option>
+          </select></div>
+        <div class="field"><label>Outcome</label>
+          <select class="selectbox" id="fOutcome" onchange="render()">
+            <option value="">All</option><option>Block</option><option>Warn</option><option>Log</option><option>Allow</option>
+          </select></div>
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th style="width:12%">Detected</th>
+              <th style="width:12%">Rep</th>
+              <th style="width:15%">Entity · Field</th>
+              <th style="width:20%">Flagged Text</th>
+              <th>Policy</th>
+              <th>Severity</th>
+              <th>Outcome</th>
+              <th>Disposition</th>
+              <th style="width:56px"></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="hint" id="empty" style="padding:14px 2px;display:none;">No violations match the current filters.</div>
+        <div class="hint" style="padding:12px 2px;">Records are immutable audit entries (Shield Field Audit Trail). Reviewers set a disposition; the original detection, jurisdiction, and outcome are never edited. Offline detections are re-validated online on reconnect and linked to the original run.</div>
+      </div>
+    </main>
+  </div>
+
+  <div class="env-note">TM · SPC · San Francisco North 20D02T11</div>
+
+  <!-- ============ DETAIL MODAL ============ -->
+  <div class="overlay hidden" id="overlay">
+    <div class="modal">
+      <header><span id="mTitle">Violation Detail</span> <span class="close" onclick="closeModal()">✕</span></header>
+      <div class="mbody" id="mbody"></div>
+      <footer>
+        <button class="btn" onclick="closeModal()">Close</button>
+      </footer>
+    </div>
+  </div>
+
+<script>
+  // ---- seed violation events ----
+  // disp: 'pending' | 'confirmed' | 'false'
+  const events = [
+    {
+      id:'CVE-10241', when:'2026-09-17 09:14', rep:'Alex Rivera', profile:'Field Rep',
+      entity:'Provider Visit', field:'Next Provider Visit Objective',
+      text:'Told Dr. Lee this will cure his patients’ hypertension with guaranteed results, even off-label.',
+      hit:['cure','guaranteed results','off-label'],
+      policy:'US Off-Label Promotion', prompt:'OpenText_Compliance_US_OffLabel',
+      severity:'Critical', outcome:'Block', mode:'AI Online',
+      country:'United States', lang:'English (en_US)', resolvedBy:'Account (HCP)',
+      rationale:'Statement promotes an unapproved (off-label) use and makes an unsubstantiated efficacy guarantee ("cure", "guaranteed results"), both prohibited under promotional-claims policy.',
+      clause:'Promotional materials must not claim or imply a cure, nor guarantee results, nor reference unapproved uses of a product.',
+      clauseSrc:'US Off-Label Policy SOP §3.2 — us-off-label-sop.pdf',
+      disp:'pending', reviewer:'', note:''
+    },
+    {
+      id:'CVE-10238', when:'2026-09-17 08:02', rep:'Dana Kim', profile:'MSL',
+      entity:'Call', field:'Discussion Summary',
+      text:'HCP reported the patient experienced a serious adverse event (SAE) — severe rash — after the second dose.',
+      hit:['adverse event','SAE'],
+      policy:'EU Pharmacovigilance / Adverse Event', prompt:'OpenText_Compliance_EU_PV',
+      severity:'High', outcome:'Warn', mode:'AI Online',
+      country:'Germany', lang:'German (de_DE)', resolvedBy:'User (rep)',
+      rationale:'Text describes a suspected serious adverse event. Pharmacovigilance policy requires this be routed to safety reporting; the rep is warned to file an AE report.',
+      clause:'Any suspected adverse event mentioned in free text must be reported to Pharmacovigilance within 24 hours.',
+      clauseSrc:'EU Pharmacovigilance SOP §5.1 — eu-pv-sop.pdf',
+      disp:'confirmed', reviewer:'Priya Nair', note:'Valid AE — safety case opened (PV-2291).'
+    },
+    {
+      id:'CVE-10231', when:'2026-09-16 16:47', rep:'Sam Osei', profile:'KAM',
+      entity:'Visit', field:'Visit Notes',
+      text:'Patient SSN 123-45-6789 shared for the co-pay program enrollment.',
+      hit:['SSN','123-45-6789'],
+      policy:'Global PHI / Personal Data', prompt:'OpenText_Compliance_PHI',
+      severity:'Critical', outcome:'Block', mode:'Offline → re-validated Online',
+      country:'United States', lang:'English (en_US)', resolvedBy:'Account (HCP)',
+      rationale:'Free text contains a Social Security Number, a direct personal identifier. Storing PHI/PII in visit notes violates data-handling policy.',
+      clause:'Personal identifiers (SSN, MRN, DOB) must never be entered into free-text engagement notes.',
+      clauseSrc:'PHI / Personal Data Guidance §2 — phi-guidance.txt',
+      disp:'pending', reviewer:'', note:''
+    },
+    {
+      id:'CVE-10225', when:'2026-09-16 14:20', rep:'Alex Rivera', profile:'Field Rep',
+      entity:'Visit', field:'Visit Notes',
+      text:'Great discussion, this drug is way better than the competitor’s — total game changer.',
+      hit:['better than'],
+      policy:'US Off-Label Promotion', prompt:'OpenText_Compliance_US_OffLabel',
+      severity:'Medium', outcome:'Log', mode:'AI Online',
+      country:'United States', lang:'English (en_US)', resolvedBy:'Account (HCP)',
+      rationale:'Comparative superiority claim without cited head-to-head evidence. Flagged as medium for review; logged rather than blocked.',
+      clause:'Comparative claims require substantiation from adequate and well-controlled head-to-head studies.',
+      clauseSrc:'US Off-Label Policy SOP §4.1 — us-off-label-sop.pdf',
+      disp:'false', reviewer:'Priya Nair', note:'Casual internal note, no promotional intent — dismissed.'
+    },
+    {
+      id:'CVE-10219', when:'2026-09-15 11:05', rep:'Dana Kim', profile:'MSL',
+      entity:'Medical Inquiry', field:'Response Notes',
+      text:'Damn, the portal keeps crashing — told the HCP I’d follow up tomorrow.',
+      hit:['Damn'],
+      policy:'Profanity & Restricted Language', prompt:'OpenText_Compliance_Generic',
+      severity:'Low', outcome:'Log', mode:'Offline (on-device rules)',
+      country:'', lang:'', resolvedBy:'Universal policy',
+      rationale:'Contains restricted/profane language in a customer-facing note. Low severity; logged for awareness.',
+      clause:'Customer-facing notes should remain professional and free of profanity.',
+      clauseSrc:'Restricted Language Guidance — (no grounding doc; keyword rule)',
+      disp:'pending', reviewer:'', note:''
+    },
+  ];
+
+  function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+  function sevPill(s){ return `<span class="sev sev-${s.toLowerCase()}"><span class="sdot"></span>${s}</span>`; }
+  function oc(v){ return `<span class="oc-${v.toLowerCase()}">${v}</span>`; }
+  function dispBadge(d){
+    if(d==='confirmed') return '<span class="disp disp-confirmed">Confirmed</span>';
+    if(d==='false') return '<span class="disp disp-false">False Positive</span>';
+    return '<span class="disp disp-pending">Pending Review</span>';
+  }
+  // highlight the matched terms inside the flagged text
+  function highlight(text, hits){
+    let out = esc(text);
+    (hits||[]).forEach(h=>{
+      const safe = esc(h).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      out = out.replace(new RegExp(safe,'gi'), m=>`<mark>${m}</mark>`);
+    });
+    return out;
+  }
+  function truncate(s,n){ return s.length>n ? esc(s.slice(0,n))+'…' : esc(s); }
+
+  function render(){
+    const fSev=document.getElementById('fSev').value;
+    const fDisp=document.getElementById('fDisp').value;
+    const fEntity=document.getElementById('fEntity').value;
+    const fOutcome=document.getElementById('fOutcome').value;
+
+    const filtered = events.filter(e=>
+      (!fSev || e.severity===fSev) &&
+      (!fDisp || e.disp===fDisp) &&
+      (!fEntity || e.entity===fEntity) &&
+      (!fOutcome || e.outcome===fOutcome)
+    );
+
+    document.getElementById('rows').innerHTML = filtered.map(e=>{
+      const idx = events.indexOf(e);
+      return `<tr>
+        <td><div>${esc(e.when.split(' ')[1])}</div><div class="hint" style="margin:2px 0 0;">${esc(e.when.split(' ')[0])}</div></td>
+        <td><div>${esc(e.rep)}</div><div class="hint" style="margin:2px 0 0;">${esc(e.profile)}</div></td>
+        <td><strong>${esc(e.entity)}</strong><div class="hint" style="margin:2px 0 0;">${esc(e.field)}</div></td>
+        <td><span class="snippet">${highlight(truncate(e.text,70), e.hit)}</span></td>
+        <td>${esc(e.policy)}</td>
+        <td>${sevPill(e.severity)}</td>
+        <td>${oc(e.outcome)}</td>
+        <td>${dispBadge(e.disp)}</td>
+        <td><a class="rec" href="#" onclick="openDetail(${idx});return false;">Review</a></td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('empty').style.display = filtered.length ? 'none' : 'block';
+
+    // KPIs (computed over full set, not filtered)
+    document.getElementById('kpiPending').textContent   = events.filter(e=>e.disp==='pending').length;
+    document.getElementById('kpiConfirmed').textContent = events.filter(e=>e.disp==='confirmed').length;
+    document.getElementById('kpiFalse').textContent     = events.filter(e=>e.disp==='false').length;
+    document.getElementById('kpiTotal').textContent     = events.length;
+  }
+  render();
+
+  // ---- detail / disposition ----
+  let openIndex = null;
+  function openDetail(i){
+    openIndex = i;
+    const e = events[i];
+    const jur = (e.country || e.lang)
+      ? `${esc(e.country||'All countries')} · ${esc(e.lang||'All languages')}`
+      : '<span class="badge universal">Universal</span>';
+    document.getElementById('mTitle').textContent = `Violation ${e.id}`;
+    document.getElementById('mbody').innerHTML = `
+      <div class="dgrid">
+        <span class="k">Detected</span><span class="v">${esc(e.when)}</span>
+        <span class="k">Rep</span><span class="v">${esc(e.rep)} · ${esc(e.profile)}</span>
+        <span class="k">Record</span><span class="v"><strong>${esc(e.entity)}</strong> · ${esc(e.field)}</span>
+        <span class="k">Policy</span><span class="v">${esc(e.policy)}</span>
+        <span class="k">Severity → Outcome</span><span class="v">${sevPill(e.severity)} &nbsp;→&nbsp; ${oc(e.outcome)}</span>
+        <span class="k">Jurisdiction</span><span class="v">${jur}<div class="hint" style="margin:3px 0 0;">Resolved by: ${esc(e.resolvedBy)}</div></span>
+        <span class="k">Run</span><span class="v"><span class="runline"><span class="tag">${esc(e.mode)}</span> Prompt: ${esc(e.prompt)}</span></span>
+      </div>
+
+      <div class="detail-block">
+        <h4>Flagged Text</h4>
+        <div class="quote">${highlight(e.text, e.hit)}</div>
+        <div class="hint" style="margin-top:8px;">Matched terms: ${e.hit.map(h=>`<span class="chip"><span class="kty">term</span>${esc(h)}</span>`).join(' ')}</div>
+      </div>
+
+      <div class="detail-block">
+        <h4>Why it was flagged <span class="badge adv">Advisory AI</span></h4>
+        <p class="rationale">${esc(e.rationale)}</p>
+        <div class="clause">“${esc(e.clause)}”<span class="src">Grounding: ${esc(e.clauseSrc)}</span></div>
+      </div>
+
+      <div class="detail-block">
+        <h4>Reviewer Disposition</h4>
+        <div>Current: ${dispBadge(e.disp)} ${e.reviewer ? `<span class="hint">· by ${esc(e.reviewer)}</span>`:''}</div>
+        ${e.note ? `<p class="rationale" style="margin:8px 0 0;"><em>“${esc(e.note)}”</em></p>`:''}
+        <div class="fld" style="margin-top:12px;">
+          <div class="field"><label>Reviewer Note</label>
+            <textarea class="textbox" id="d_note" rows="2" placeholder="Add rationale for this disposition…">${esc(e.note)}</textarea></div>
+        </div>
+        <div class="disp-actions">
+          <button class="btn danger" onclick="setDisp('confirmed')">Confirm Violation</button>
+          <button class="btn good" onclick="setDisp('false')">Mark False Positive</button>
+          <button class="btn" onclick="setDisp('pending')">Reset to Pending</button>
+        </div>
+        <div class="ro-note">Setting a disposition does not alter the original detection or outcome — it adds a review record to the immutable audit trail.</div>
+      </div>
+    `;
+    document.getElementById('overlay').classList.remove('hidden');
+  }
+  function closeModal(){ document.getElementById('overlay').classList.add('hidden'); openIndex=null; }
+
+  function setDisp(d){
+    if(openIndex===null) return;
+    const e = events[openIndex];
+    e.disp = d;
+    e.reviewer = (d==='pending') ? '' : 'Nilotpal Paul';
+    e.note = document.getElementById('d_note').value.trim();
+    render();
+    closeModal();
+  }
+</script>
+</body>
+</html>

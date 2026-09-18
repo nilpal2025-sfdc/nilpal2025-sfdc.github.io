@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Open Text Compliance — Monitored Fields</title>
+<link rel="stylesheet" href="_shared.css" />
+</head>
+<body>
+
+  <!-- global header -->
+  <header class="global-header">
+    <div class="logo"><span class="swirl"></span>Cumulus</div>
+    <div class="search-wrap"><input class="global-search" placeholder="Search..." /><button class="ask-btn"><span class="spark">✦</span> Ask</button></div>
+    <div class="header-icons"><span class="hicon">☺</span><span class="hicon">★</span><span class="hicon">＋</span><span class="hicon">☁</span><span class="hicon">?</span><span class="hicon">⚙</span><span class="hicon">🔔</span><span class="avatar">NP</span></div>
+  </header>
+
+  <!-- app nav -->
+  <nav class="app-nav">
+    <span class="app-name">Life Sciences Commercial</span>
+    <div class="nav-tabs">
+      <span class="nav-tab">Home</span><span class="nav-tab">Chatter</span>
+      <a class="nav-tab active" href="admin-console.html">Admin Console</a>
+      <span class="nav-tab">Accounts</span><span class="nav-tab">Calendar</span>
+      <span class="nav-tab">Visits <span class="caret">▾</span></span>
+      <span class="nav-tab">Intelligent Content</span>
+      <span class="nav-tab">Inquiries <span class="caret">▾</span></span>
+      <span class="nav-tab">Account Plans <span class="caret">▾</span></span>
+      <span class="nav-tab">More <span class="caret">▾</span></span>
+    </div>
+    <span class="nav-edit">✎</span>
+  </nav>
+
+  <div class="shell">
+    <aside class="rail">
+      <div class="rail-search"><input placeholder="Quick Find" /></div>
+      <a class="rail-item" href="compliance-settings.html">Compliance Settings</a>
+      <a class="rail-item" href="policies.html">Policies</a>
+      <a class="rail-item active" href="monitored-fields.html">Monitored Fields</a>
+      <a class="rail-item" href="violation-log.html">Violation Log</a>
+    </aside>
+
+    <main class="content">
+      <div class="setup-header">
+        <span class="setup-ic">🛡</span>
+        <div><div class="setup-eyebrow">Setup · Open Text Compliance</div><div class="setup-title">Monitored Fields</div></div>
+      </div>
+
+      <div class="list-head">
+        <span class="count" id="count"></span>
+        <span class="spacer"></span>
+        <button class="btn primary" onclick="openModal()">＋ New Monitored Field</button>
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th style="width:13%">Entity</th>
+              <th style="width:17%">Field</th>
+              <th style="width:12%">Validation Mode</th>
+              <th style="width:26%">Applied Policies</th>
+              <th style="width:20%">Severity → Outcome</th>
+              <th>Status</th>
+              <th style="width:60px"></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="hint" style="padding:12px 2px;">Each monitored field runs the policies applied to it. At run time, only policies whose resolved country/language match the rep (or whose scope is universal) are evaluated.</div>
+      </div>
+    </main>
+  </div>
+
+  <div class="env-note">TM · SPC · San Francisco North 20D02T11</div>
+
+  <!-- ============ NEW MONITORED FIELD MODAL ============ -->
+  <div class="overlay hidden" id="overlay">
+    <div class="modal">
+      <header><span id="modalTitle">New Monitored Field</span> <span class="close" onclick="closeModal()">✕</span></header>
+      <div class="mbody">
+        <div class="grid2">
+          <div class="fld">
+            <div class="field"><label>Entity <span class="req">*</span></label>
+              <select class="selectbox" id="f_entity" onchange="loadFields()">
+                <option value="">— Select Entity —</option>
+                <option>Visit</option><option>Provider Visit</option><option>Call</option>
+                <option>Account</option><option>Medical Inquiry</option><option>Event</option>
+              </select></div>
+          </div>
+          <div class="fld">
+            <div class="field"><label>Open-Text Field <span class="req">*</span></label>
+              <select class="selectbox" id="f_field" disabled><option>— Select Entity first —</option></select></div>
+          </div>
+
+          <div class="fld span2">
+            <div class="field"><label>Validation Mode</label>
+              <select class="selectbox" id="f_mode">
+                <option>AI with Offline Fallback</option>
+                <option>AI Only</option>
+                <option>Offline Only</option>
+              </select>
+              <div class="hint"><span class="badge adv">Advisory AI</span> LLM detects and explains; the rep decides and edits. Offline uses the policies' keyword/regex terms on-device.</div></div>
+          </div>
+
+          <div class="fld span2">
+            <div class="field"><label>Apply Policies <span class="req">*</span></label>
+              <div class="hint" style="margin:-2px 0 8px;">Select one or more. Universal policies apply everywhere; scoped policies apply only where their country/language match.</div>
+              <div class="picklist" id="policyPicks"></div>
+            </div>
+          </div>
+
+          <div class="fld span2">
+            <div class="field"><label>Severity → Outcome</label>
+              <div class="hint" style="margin:-2px 0 10px;">Defaults inherited from Compliance Settings; override here for this field. The policy/LLM assigns the severity; this map governs whether a record can save.</div>
+              <div class="sevgrid">
+                <div class="sevrow"><span>Critical</span>
+                  <select class="selectbox" id="sev_critical"><option>Block</option><option>Warn</option><option>Log</option><option>Allow</option></select></div>
+                <div class="sevrow"><span>High</span>
+                  <select class="selectbox" id="sev_high"><option>Warn</option><option>Block</option><option>Log</option><option>Allow</option></select></div>
+                <div class="sevrow"><span>Medium</span>
+                  <select class="selectbox" id="sev_medium"><option>Log</option><option>Warn</option><option>Block</option><option>Allow</option></select></div>
+                <div class="sevrow"><span>Low</span>
+                  <select class="selectbox" id="sev_low"><option>Log</option><option>Allow</option><option>Warn</option></select></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="fld span2">
+            <label style="display:flex;gap:10px;align-items:center;font-weight:400;color:#181818;">
+              <input type="checkbox" id="f_enabled" checked style="accent-color:var(--slds-blue);width:16px;height:16px;" />
+              Enabled
+            </label>
+          </div>
+        </div>
+      </div>
+      <footer>
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn primary" onclick="saveField()">Save</button>
+      </footer>
+    </div>
+  </div>
+
+<script>
+  // available policies (would come from the Policies screen)
+  const allPolicies = [
+    {name:'US Off-Label Promotion', scope:'United States · en_US'},
+    {name:'EU Pharmacovigilance / Adverse Event', scope:'Germany · de_DE'},
+    {name:'Global PHI / Personal Data', scope:'Universal'},
+    {name:'Profanity & Restricted Language', scope:'Universal'},
+    {name:'Japan Promotional Claims', scope:'Japan · ja_JP'},
+  ];
+
+  // open-text fields per entity
+  const fieldsByEntity = {
+    'Visit':['Visit Notes','Next Visit Objective','Call Objective'],
+    'Provider Visit':['Next Provider Visit Objective','Discussion Notes','Follow-up Notes'],
+    'Call':['Discussion Summary','Key Message Notes'],
+    'Account':['Account Notes','Compliance Remarks'],
+    'Medical Inquiry':['Inquiry Text','Response Notes'],
+    'Event':['Event Description','Attendee Notes']
+  };
+
+  const defaultSev = {critical:'Block', high:'Warn', medium:'Log', low:'Log'};
+
+  // seed mapped fields
+  const mapped = [
+    {entity:'Provider Visit', field:'Next Provider Visit Objective', mode:'AI with Offline Fallback', policies:['US Off-Label Promotion','Global PHI / Personal Data'], sev:{critical:'Block',high:'Block',medium:'Warn',low:'Log'}, on:true},
+    {entity:'Visit', field:'Visit Notes', mode:'AI with Offline Fallback', policies:['Global PHI / Personal Data','Profanity & Restricted Language'], sev:{critical:'Block',high:'Warn',medium:'Log',low:'Log'}, on:true},
+    {entity:'Call', field:'Discussion Summary', mode:'AI Only', policies:['US Off-Label Promotion','EU Pharmacovigilance / Adverse Event'], sev:{critical:'Block',high:'Warn',medium:'Warn',low:'Log'}, on:true},
+  ];
+
+  function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+  function oc(v){ return `<span class="oc-${v.toLowerCase()}">${v}</span>`; }
+  function sevMap(s){
+    return `<div class="sevmap">
+      <b>C</b>▸${oc(s.critical)} · <b>H</b>▸${oc(s.high)}<br>
+      <b>M</b>▸${oc(s.medium)} · <b>L</b>▸${oc(s.low)}</div>`;
+  }
+  function render(){
+    document.getElementById('rows').innerHTML = mapped.map((m,i)=>{
+      const chips = m.policies.map(p=>`<span class="chip">${esc(p)}</span>`).join(' ');
+      const status = m.on ? '<span class="badge on"><span class="dot g"></span>Enabled</span>' : '<span class="badge off"><span class="dot k"></span>Disabled</span>';
+      return `<tr>
+        <td><strong>${esc(m.entity)}</strong></td>
+        <td><a class="rec" href="#" onclick="editField(${i});return false;">${esc(m.field)}</a></td>
+        <td>${esc(m.mode)}</td>
+        <td><div class="chips">${chips}</div></td>
+        <td>${sevMap(m.sev || defaultSev)}</td>
+        <td>${status}</td>
+        <td><a class="rec" href="#" onclick="editField(${i});return false;">Edit</a></td>
+      </tr>`;
+    }).join('');
+    document.getElementById('count').textContent = mapped.length + ' items';
+  }
+  render();
+
+  let editingIndex = null;
+
+  function loadFields(){
+    const e = document.getElementById('f_entity').value;
+    const sel = document.getElementById('f_field');
+    if(!e){ sel.disabled=true; sel.innerHTML='<option>— Select Entity first —</option>'; return; }
+    sel.disabled=false;
+    sel.innerHTML = (fieldsByEntity[e]||[]).map(f=>`<option>${esc(f)}</option>`).join('');
+  }
+
+  function renderPolicyPicks(selected){
+    const set = new Set(selected||[]);
+    document.getElementById('policyPicks').innerHTML = allPolicies.map(p=>
+      `<label><input type="checkbox" value="${esc(p.name)}" ${set.has(p.name)?'checked':''} />
+        <span><span style="color:#0b5cab">${esc(p.name)}</span><br><span class="pmeta">${esc(p.scope)}</span></span></label>`).join('');
+  }
+  function setSev(s){
+    document.getElementById('sev_critical').value = s.critical;
+    document.getElementById('sev_high').value = s.high;
+    document.getElementById('sev_medium').value = s.medium;
+    document.getElementById('sev_low').value = s.low;
+  }
+
+  function openModal(){
+    editingIndex = null;
+    document.getElementById('modalTitle').textContent = 'New Monitored Field';
+    document.getElementById('f_entity').value='';
+    document.getElementById('f_entity').disabled = false;
+    loadFields();
+    document.getElementById('f_mode').selectedIndex = 0;
+    document.getElementById('f_enabled').checked = true;
+    setSev(defaultSev);
+    renderPolicyPicks([]);
+    document.getElementById('overlay').classList.remove('hidden');
+  }
+
+  function editField(i){
+    const m = mapped[i];
+    editingIndex = i;
+    document.getElementById('modalTitle').textContent = 'Edit Monitored Field';
+    // entity is the key of a mapping — keep it selectable but repopulate its fields
+    document.getElementById('f_entity').value = m.entity;
+    document.getElementById('f_entity').disabled = false;
+    loadFields();
+    document.getElementById('f_field').value = m.field;
+    setSelectByText('f_mode', m.mode);
+    document.getElementById('f_enabled').checked = !!m.on;
+    setSev(m.sev || defaultSev);
+    renderPolicyPicks(m.policies || []);
+    document.getElementById('overlay').classList.remove('hidden');
+  }
+
+  function setSelectByText(id, text){
+    const sel = document.getElementById(id);
+    for(const o of sel.options){ if(o.textContent === text || o.value === text){ sel.value = o.value; return; } }
+  }
+
+  function closeModal(){ document.getElementById('overlay').classList.add('hidden'); editingIndex = null; }
+
+  function saveField(){
+    const entity = document.getElementById('f_entity').value;
+    const field = document.getElementById('f_field').value;
+    if(!entity || !field){ alert('Entity and Field are required.'); return; }
+    const picks = [...document.querySelectorAll('#policyPicks input:checked')].map(c=>c.value);
+    if(picks.length===0){ alert('Apply at least one policy.'); return; }
+    const sev = {
+      critical: document.getElementById('sev_critical').value,
+      high: document.getElementById('sev_high').value,
+      medium: document.getElementById('sev_medium').value,
+      low: document.getElementById('sev_low').value
+    };
+    const record = {entity, field, mode:document.getElementById('f_mode').value, policies:picks, sev, on:document.getElementById('f_enabled').checked};
+    if(editingIndex !== null){ mapped[editingIndex] = record; }
+    else { mapped.unshift(record); }
+    render();
+    closeModal();
+  }
+</script>
+</body>
+</html>

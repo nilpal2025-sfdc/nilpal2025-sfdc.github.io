@@ -103,12 +103,23 @@
 
           <div class="fld span2">
             <div class="field"><label>Validation Mode</label>
-              <select class="selectbox" id="f_mode">
+              <select class="selectbox" id="f_mode" onchange="onMode()">
                 <option>AI with Offline Fallback</option>
                 <option>AI Only</option>
                 <option>Offline Only</option>
               </select>
               <div class="hint"><span class="badge adv">Advisory AI</span> LLM detects and explains; the rep decides and edits. Offline uses the policies' keyword/regex terms on-device.</div></div>
+          </div>
+
+          <div class="fld span2" id="promptBlock">
+            <div class="field"><label>Prompt Template</label>
+              <select class="selectbox" id="f_prompt">
+                <option>OpenText_Compliance_Generic</option>
+                <option>OpenText_Compliance_US_OffLabel</option>
+                <option>OpenText_Compliance_EU_PV</option>
+                <option>OpenText_Compliance_PHI</option>
+              </select>
+              <div class="hint">The GenAI prompt template invoked for LLM validation on this field. Applies to the AI path only.</div></div>
           </div>
 
           <div class="fld span2">
@@ -185,9 +196,9 @@
 
   // seed mapped fields
   const mapped = [
-    {channel:'Visit Engagement', entity:'Provider Visit', field:'Next Provider Visit Objective', mode:'AI with Offline Fallback', policies:['US Off-Label Promotion','Global PHI / Personal Data'], sev:[['Critical','Block'],['High','Block'],['Medium','Warn'],['Low','Allow']], on:true, log:true},
-    {channel:'Visit Engagement', entity:'Visit', field:'Visit Notes', mode:'AI with Offline Fallback', policies:['Global PHI / Personal Data','Profanity & Restricted Language'], sev:[['Critical','Block'],['High','Warn'],['Medium','Allow'],['Low','Allow']], on:true, log:true},
-    {channel:'Visit Agent', entity:'', field:'User Utterance', mode:'AI Only', policies:['US Off-Label Promotion','EU Pharmacovigilance / Adverse Event'], sev:[['Critical','Block'],['High','Warn'],['Medium','Warn'],['Low','Allow']], on:true, log:false},
+    {channel:'Visit Engagement', entity:'Provider Visit', field:'Next Provider Visit Objective', mode:'AI with Offline Fallback', prompt:'OpenText_Compliance_US_OffLabel', policies:['US Off-Label Promotion','Global PHI / Personal Data'], sev:[['Critical','Block'],['High','Block'],['Medium','Warn'],['Low','Allow']], on:true, log:true},
+    {channel:'Visit Engagement', entity:'Visit', field:'Visit Notes', mode:'AI with Offline Fallback', prompt:'OpenText_Compliance_Generic', policies:['Global PHI / Personal Data','Profanity & Restricted Language'], sev:[['Critical','Block'],['High','Warn'],['Medium','Allow'],['Low','Allow']], on:true, log:true},
+    {channel:'Visit Agent', entity:'', field:'User Utterance', mode:'AI Only', prompt:'OpenText_Compliance_Generic', policies:['US Off-Label Promotion','EU Pharmacovigilance / Adverse Event'], sev:[['Critical','Block'],['High','Warn'],['Medium','Warn'],['Low','Allow']], on:true, log:false},
   ];
 
   function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');}
@@ -309,6 +320,8 @@
     document.getElementById('f_channel').value='';
     loadChannel();
     document.getElementById('f_mode').selectedIndex = 0;
+    document.getElementById('f_prompt').selectedIndex = 0;
+    onMode();
     document.getElementById('f_enabled').checked = true;
     document.getElementById('f_logging').checked = true;
     setSev(defaultSev);
@@ -326,6 +339,8 @@
     if(m.entity){ document.getElementById('f_entity').value = m.entity; loadFields(); }
     document.getElementById('f_field').value = m.field;
     setSelectByText('f_mode', m.mode);
+    setSelectByText('f_prompt', m.prompt || 'OpenText_Compliance_Generic');
+    onMode();
     document.getElementById('f_enabled').checked = !!m.on;
     document.getElementById('f_logging').checked = m.log !== false;
     setSev(m.sev || defaultSev);
@@ -336,6 +351,12 @@
   function setSelectByText(id, text){
     const sel = document.getElementById(id);
     for(const o of sel.options){ if(o.textContent === text || o.value === text){ sel.value = o.value; return; } }
+  }
+
+  // validation mode governs whether the AI prompt template applies
+  function onMode(){
+    const usesAI = document.getElementById('f_mode').value !== 'Offline Only';
+    document.getElementById('promptBlock').classList.toggle('hidden', !usesAI);
   }
 
   function closeModal(){ document.getElementById('overlay').classList.add('hidden'); editingIndex = null; }
@@ -351,7 +372,9 @@
     const picks = [...document.querySelectorAll('#policyPicks input:checked')].map(c=>c.value);
     if(picks.length===0){ alert('Apply at least one policy.'); return; }
     const sev = readSev();
-    const record = {channel, entity, field, mode:document.getElementById('f_mode').value, policies:picks, sev, on:document.getElementById('f_enabled').checked, log:document.getElementById('f_logging').checked};
+    const mode = document.getElementById('f_mode').value;
+    const prompt = (mode === 'Offline Only') ? '' : document.getElementById('f_prompt').value;
+    const record = {channel, entity, field, mode, prompt, policies:picks, sev, on:document.getElementById('f_enabled').checked, log:document.getElementById('f_logging').checked};
     if(editingIndex !== null){ mapped[editingIndex] = record; }
     else { mapped.unshift(record); }
     render();

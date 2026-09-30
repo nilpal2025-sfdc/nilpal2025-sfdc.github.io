@@ -61,6 +61,7 @@
               <th>Applies To</th>
               <th>Country</th>
               <th>Language</th>
+              <th>Product</th>
               <th>Resolve By</th>
               <th>Grounding Doc</th>
               <th>Keywords / Phrases</th>
@@ -71,7 +72,7 @@
           </thead>
           <tbody id="rows"></tbody>
         </table>
-        <div class="hint" style="padding:12px 2px;">A policy with no country <em>and</em> no language is <strong>universally applicable</strong> whenever it is enabled. Country/language-scoped policies apply only when the resolved jurisdiction matches.</div>
+        <div class="hint" style="padding:12px 2px;">A policy with no country, no language, <em>and</em> no product is <strong>universally applicable</strong> whenever it is enabled. Country/language-scoped policies apply only when the resolved jurisdiction matches; product-scoped policies apply only to the selected products.</div>
       </div>
     </main>
   </div>
@@ -166,6 +167,28 @@
               </select></div>
           </div>
 
+          <!-- Product scope -->
+          <div class="fld span2">
+            <div class="field"><label>Products</label>
+              <select class="selectbox" id="f_prodmode" onchange="onProdMode()">
+                <option value="all">All Products (universal)</option>
+                <option value="specific">Specific Products</option>
+              </select>
+              <div class="hint">Scope this policy to one or more products, or leave as <em>All Products</em> to apply regardless of product. This is the <em>what</em> — separate from the audience <em>who</em> and the country/language <em>where</em>.</div>
+            </div>
+          </div>
+          <div class="fld span2 hidden" id="productWrap">
+            <div class="field"><label>Select Products</label>
+              <div class="picklist" id="productPicks">
+                <label><input type="checkbox" value="Onivex" /><span>Onivex <span class="pmeta">· Oncology</span></span></label>
+                <label><input type="checkbox" value="Cardiva XR" /><span>Cardiva XR <span class="pmeta">· Cardiovascular</span></span></label>
+                <label><input type="checkbox" value="Pulmoza" /><span>Pulmoza <span class="pmeta">· Respiratory</span></span></label>
+                <label><input type="checkbox" value="Neurella" /><span>Neurella <span class="pmeta">· Neurology</span></span></label>
+                <label><input type="checkbox" value="Immunoq" /><span>Immunoq <span class="pmeta">· Immunology</span></span></label>
+              </div>
+            </div>
+          </div>
+
           <div class="fld span2">
             <div class="field"><label>Determine Applicability By</label>
               <select class="selectbox" id="f_basis">
@@ -221,11 +244,11 @@
 <script>
   // ---- seed data ----
   const policies = [
-    {name:'US Off-Label Promotion', desc:'Detects promotion of unapproved uses and unsubstantiated efficacy claims.', type:'AI with Offline Fallback', start:'2026-01-01', end:'', applies:{mode:'profile',values:['Field Rep']}, country:'United States', lang:'English (en_US)', basis:'User', doc:'us-off-label-sop.pdf', kwList:[{t:'Keyword',v:'off-label',sev:'Critical'},{t:'Phrase',v:'guaranteed cure',sev:'Critical'},{t:'Regex',v:'\\bunapproved use\\b',sev:'High'}], prompt:'OpenText_Compliance_US_OffLabel', on:true},
-    {name:'EU Pharmacovigilance / Adverse Event', desc:'Flags adverse-event and side-effect language requiring PV reporting.', type:'AI with Offline Fallback', start:'2026-03-01', end:'', applies:{mode:'profile',values:['MSL','Field Rep']}, country:'Germany', lang:'German (de_DE)', basis:'User', doc:'eu-pv-sop.pdf', kwList:[{t:'Keyword',v:'adverse event',sev:'Critical'},{t:'Keyword',v:'side effect',sev:'High'},{t:'Phrase',v:'patient reported',sev:'Medium'},{t:'Regex',v:'\\bSAE\\b',sev:'Critical'}], prompt:'OpenText_Compliance_EU_PV', on:true},
-    {name:'Global PHI / Personal Data', desc:'Detects protected health information / personal identifiers in free text.', type:'AI with Offline Fallback', start:'', end:'', applies:{mode:'org'}, country:'', lang:'', basis:'User', doc:'phi-guidance.txt', kwList:[{t:'Keyword',v:'SSN',sev:'Critical'},{t:'Keyword',v:'date of birth',sev:'High'},{t:'Phrase',v:'medical record number',sev:'High'},{t:'Regex',v:'\\d{3}-\\d{2}-\\d{4}',sev:'Critical'},{t:'Keyword',v:'diagnosis',sev:'Medium'}], prompt:'OpenText_Compliance_PHI', on:true},
-    {name:'Profanity & Restricted Language', desc:'Blocks profane or otherwise restricted language in customer-facing notes.', type:'Offline Only', start:'2025-06-01', end:'', applies:{mode:'org'}, country:'', lang:'', basis:'User', doc:'', kwList:[{t:'Keyword',v:'damn',sev:'Low'},{t:'Keyword',v:'idiot',sev:'Medium'},{t:'Regex',v:'\\bWTF\\b',sev:'Medium'}], prompt:'OpenText_Compliance_Generic', on:true},
-    {name:'Japan Promotional Claims', desc:'Reviews promotional claims against Japan advertising codes.', type:'AI Only', start:'2026-01-01', end:'2026-12-31', applies:{mode:'profile',values:['KAM']}, country:'Japan', lang:'Japanese (ja_JP)', basis:'Account (HCP)', doc:'jp-promo-sop.pdf', kwList:[], prompt:'OpenText_Compliance_Generic', on:false},
+    {name:'US Off-Label Promotion', desc:'Detects promotion of unapproved uses and unsubstantiated efficacy claims.', type:'AI with Offline Fallback', start:'2026-01-01', end:'', applies:{mode:'profile',values:['Field Rep']}, country:'United States', lang:'English (en_US)', products:['Onivex'], basis:'User', doc:'us-off-label-sop.pdf', kwList:[{t:'Keyword',v:'off-label',sev:'Critical'},{t:'Phrase',v:'guaranteed cure',sev:'Critical'},{t:'Regex',v:'\\bunapproved use\\b',sev:'High'}], prompt:'OpenText_Compliance_US_OffLabel', on:true},
+    {name:'EU Pharmacovigilance / Adverse Event', desc:'Flags adverse-event and side-effect language requiring PV reporting.', type:'AI with Offline Fallback', start:'2026-03-01', end:'', applies:{mode:'profile',values:['MSL','Field Rep']}, country:'Germany', lang:'German (de_DE)', products:[], basis:'User', doc:'eu-pv-sop.pdf', kwList:[{t:'Keyword',v:'adverse event',sev:'Critical'},{t:'Keyword',v:'side effect',sev:'High'},{t:'Phrase',v:'patient reported',sev:'Medium'},{t:'Regex',v:'\\bSAE\\b',sev:'Critical'}], prompt:'OpenText_Compliance_EU_PV', on:true},
+    {name:'Global PHI / Personal Data', desc:'Detects protected health information / personal identifiers in free text.', type:'AI with Offline Fallback', start:'', end:'', applies:{mode:'org'}, country:'', lang:'', products:[], basis:'User', doc:'phi-guidance.txt', kwList:[{t:'Keyword',v:'SSN',sev:'Critical'},{t:'Keyword',v:'date of birth',sev:'High'},{t:'Phrase',v:'medical record number',sev:'High'},{t:'Regex',v:'\\d{3}-\\d{2}-\\d{4}',sev:'Critical'},{t:'Keyword',v:'diagnosis',sev:'Medium'}], prompt:'OpenText_Compliance_PHI', on:true},
+    {name:'Profanity & Restricted Language', desc:'Blocks profane or otherwise restricted language in customer-facing notes.', type:'Offline Only', start:'2025-06-01', end:'', applies:{mode:'org'}, country:'', lang:'', products:[], basis:'User', doc:'', kwList:[{t:'Keyword',v:'damn',sev:'Low'},{t:'Keyword',v:'idiot',sev:'Medium'},{t:'Regex',v:'\\bWTF\\b',sev:'Medium'}], prompt:'OpenText_Compliance_Generic', on:true},
+    {name:'Japan Promotional Claims', desc:'Reviews promotional claims against Japan advertising codes.', type:'AI Only', start:'2026-01-01', end:'2026-12-31', applies:{mode:'profile',values:['KAM']}, country:'Japan', lang:'Japanese (ja_JP)', products:['Cardiva XR','Onivex'], basis:'Account (HCP)', doc:'jp-promo-sop.pdf', kwList:[], prompt:'OpenText_Compliance_Generic', on:false},
   ];
 
   function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');}
@@ -234,6 +257,10 @@
     const label = a.mode==='profile' ? 'Profiles' : 'Users';
     const vals = (a.values||[]).map(esc).join(', ') || '—';
     return `<span style="font-size:12px"><span style="color:#706e6b">${label}:</span> ${vals}</span>`;
+  }
+  function productLabel(prods){
+    if(!prods || !prods.length) return '<span class="badge universal">All</span>';
+    return `<span style="font-size:12px">${prods.map(esc).join(', ')}</span>`;
   }
   function render(){
     const body = document.getElementById('rows');
@@ -251,6 +278,7 @@
         <td>${esc(p.type || 'AI with Offline Fallback')}</td>
         <td>${appliesLabel(p.applies)}</td>
         <td>${country}</td><td>${lang}</td>
+        <td>${productLabel(p.products)}</td>
         <td>${esc(p.basis)}</td>
         <td>${doc}</td>
         <td>${n} term${n===1?'':'s'}</td>
@@ -288,6 +316,9 @@
     document.getElementById('f_applies').value='org';
     document.querySelectorAll('#profilePicks input, #userPicks input').forEach(c=>c.checked=false);
     onApplies();
+    document.getElementById('f_prodmode').value='all';
+    document.querySelectorAll('#productPicks input').forEach(c=>c.checked=false);
+    onProdMode();
     document.getElementById('overlay').classList.remove('hidden');
   }
 
@@ -322,6 +353,12 @@
     }
     onApplies();
 
+    // products
+    const prods = p.products || [];
+    document.getElementById('f_prodmode').value = prods.length ? 'specific' : 'all';
+    document.querySelectorAll('#productPicks input').forEach(c=>{ c.checked = prods.includes(c.value); });
+    onProdMode();
+
     // keywords
     kws = (p.kwList || []).map(k=>({t:k.t, v:k.v, sev:k.sev || 'Medium'}));
     renderKw();
@@ -342,6 +379,11 @@
     const v = document.getElementById('f_applies').value;
     document.getElementById('profileWrap').classList.toggle('hidden', v!=='profile');
     document.getElementById('userWrap').classList.toggle('hidden', v!=='user');
+  }
+
+  function onProdMode(){
+    const v = document.getElementById('f_prodmode').value;
+    document.getElementById('productWrap').classList.toggle('hidden', v!=='specific');
   }
 
   // policy type governs which evidence the policy carries:
@@ -391,6 +433,9 @@
     if(applyMode==='profile') applies.values = [...document.querySelectorAll('#profilePicks input:checked')].map(c=>c.value);
     if(applyMode==='user') applies.values = [...document.querySelectorAll('#userPicks input:checked')].map(c=>c.value);
     if(applyMode!=='org' && applies.values.length===0){ alert('Select at least one '+(applyMode==='profile'?'profile':'user')+', or choose All Users.'); return; }
+    const prodMode = document.getElementById('f_prodmode').value;
+    const products = prodMode==='specific' ? [...document.querySelectorAll('#productPicks input:checked')].map(c=>c.value) : [];
+    if(prodMode==='specific' && products.length===0){ alert('Select at least one product, or choose All Products.'); return; }
     const start = document.getElementById('f_start').value;
     const end = document.getElementById('f_end').value;
     if(start && end && end < start){ alert('End Date must be on or after Start Date.'); return; }
@@ -403,7 +448,7 @@
       desc: document.getElementById('f_desc').value.trim(),
       type,
       start, end,
-      applies, country, lang, basis,
+      applies, country, lang, products, basis,
       doc,
       kwList,
       on: document.getElementById('f_enabled').checked

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Open Text Compliance — Monitored Fields</title>
+<link rel="stylesheet" href="_shared.css" />
+</head>
+<body>
+
+  <!-- global header -->
+  <header class="global-header">
+    <div class="logo"><span class="swirl"></span>Cumulus</div>
+    <div class="search-wrap"><input class="global-search" placeholder="Search..." /><button class="ask-btn"><span class="spark">✦</span> Ask</button></div>
+    <div class="header-icons"><span class="hicon">☺</span><span class="hicon">★</span><span class="hicon">＋</span><span class="hicon">☁</span><span class="hicon">?</span><span class="hicon">⚙</span><span class="hicon">🔔</span><span class="avatar">NP</span></div>
+  </header>
+
+  <!-- app nav -->
+  <nav class="app-nav">
+    <span class="app-name">Life Sciences Commercial</span>
+    <div class="nav-tabs">
+      <span class="nav-tab">Home</span><span class="nav-tab">Chatter</span>
+      <a class="nav-tab active" href="admin-console.html">Admin Console</a>
+      <span class="nav-tab">Accounts</span><span class="nav-tab">Calendar</span>
+      <span class="nav-tab">Visits <span class="caret">▾</span></span>
+      <span class="nav-tab">Intelligent Content</span>
+      <span class="nav-tab">Inquiries <span class="caret">▾</span></span>
+      <span class="nav-tab">Account Plans <span class="caret">▾</span></span>
+      <span class="nav-tab">More <span class="caret">▾</span></span>
+    </div>
+    <span class="nav-edit">✎</span>
+  </nav>
+
+  <div class="shell">
+    <aside class="rail">
+      <div class="rail-search"><input placeholder="Quick Find" /></div>
+      <a class="rail-item" href="compliance-settings.html">Compliance Settings</a>
+      <a class="rail-item" href="policies.html">Policies</a>
+      <a class="rail-item active" href="monitored-fields.html">Monitored Fields</a>
+      <a class="rail-item" href="violation-log.html">Violation Log</a>
+    </aside>
+
+    <main class="content">
+      <div class="setup-header">
+        <span class="setup-ic">🛡</span>
+        <div><div class="setup-eyebrow">Setup · Open Text Compliance</div><div class="setup-title">Monitored Fields</div></div>
+      </div>
+
+      <div class="list-head">
+        <span class="count" id="count"></span>
+        <span class="spacer"></span>
+        <button class="btn primary" onclick="openModal()">＋ New Monitored Field</button>
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th style="width:13%">Channel</th>
+              <th style="width:11%">Object</th>
+              <th style="width:15%">Field</th>
+              <th style="width:11%">Validation Mode</th>
+              <th style="width:22%">Applied Policies</th>
+              <th style="width:18%">Severity → Outcome</th>
+              <th>Status</th>
+              <th style="width:60px"></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="hint" style="padding:12px 2px;">Each monitored field runs the policies applied to it. At run time, only policies whose resolved country/language match the rep (or whose scope is universal) are evaluated.</div>
+      </div>
+    </main>
+  </div>
+
+  <div class="env-note">TM · SPC · San Francisco North 20D02T11</div>
+
+  <!-- ============ NEW MONITORED FIELD MODAL ============ -->
+  <div class="overlay hidden" id="overlay">
+    <div class="modal">
+      <header><span id="modalTitle">New Monitored Field</span> <span class="close" onclick="closeModal()">✕</span></header>
+      <div class="mbody">
+        <div class="grid2">
+          <div class="fld span2">
+            <div class="field"><label>Channel <span class="req">*</span></label>
+              <select class="selectbox" id="f_channel" onchange="loadChannel()">
+                <option value="">— Select Channel —</option>
+                <option>Visit Engagement</option><option>Visit Agent</option>
+                <option>Field Email</option><option>Agentforce</option>
+              </select>
+              <div class="hint">The surface being monitored. Determines whether an object applies and which fields can be screened.</div></div>
+          </div>
+          <div class="fld">
+            <div class="field"><label>Object <span class="req" id="objReq">*</span></label>
+              <select class="selectbox" id="f_entity" disabled onchange="loadFields()">
+                <option value="">— Select Channel first —</option>
+              </select></div>
+          </div>
+          <div class="fld">
+            <div class="field"><label>Open-Text Field <span class="req">*</span></label>
+              <select class="selectbox" id="f_field" disabled><option>— Select Channel first —</option></select></div>
+          </div>
+
+          <div class="fld span2">
+            <div class="field"><label>Validation Mode</label>
+              <select class="selectbox" id="f_mode">
+                <option>AI with Offline Fallback</option>
+                <option>AI Only</option>
+                <option>Offline Only</option>
+              </select>
+              <div class="hint"><span class="badge adv">Advisory AI</span> LLM detects and explains; the rep decides and edits. Offline uses the policies' keyword/regex terms on-device.</div></div>
+          </div>
+
+          <div class="fld span2">
+            <div class="field"><label>Apply Policies <span class="req">*</span></label>
+              <div class="hint" style="margin:-2px 0 8px;">Select one or more. Universal policies apply everywhere; scoped policies apply only where their country/language match.</div>
+              <div class="picklist" id="policyPicks"></div>
+            </div>
+          </div>
+
+          <div class="fld span2">
+            <div class="field"><label>Severity → Outcome</label>
+              <div class="hint" style="margin:-2px 0 10px;">Defaults inherited from Compliance Settings; override here for this field. The policy/LLM assigns the severity; this map governs whether a record can save.</div>
+              <div id="sevMap"></div>
+              <a class="addsevrow" id="addSevBtn" onclick="addMappingRow()">＋ Add severity mapping</a>
+            </div>
+          </div>
+
+          <div class="fld span2">
+            <label style="display:flex;gap:10px;align-items:center;font-weight:400;color:#181818;">
+              <input type="checkbox" id="f_enabled" checked style="accent-color:var(--slds-blue);width:16px;height:16px;" />
+              Enabled
+            </label>
+          </div>
+
+          <div class="fld span2">
+            <label style="display:flex;gap:10px;align-items:flex-start;font-weight:400;color:#181818;">
+              <input type="checkbox" id="f_logging" checked style="accent-color:var(--slds-blue);width:16px;height:16px;margin-top:1px;" />
+              <span>Enable violation logging
+                <span style="display:block;color:#8a8a8a;font-size:11.5px;margin-top:2px;">Write a violation record each time this field is flagged. Turn off to screen without persisting violations for this field.</span></span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <footer>
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn primary" onclick="saveField()">Save</button>
+      </footer>
+    </div>
+  </div>
+
+<script>
+  // available policies (would come from the Policies screen)
+  const allPolicies = [
+    {name:'US Off-Label Promotion', scope:'United States · en_US', type:'AI with Offline Fallback'},
+    {name:'EU Pharmacovigilance / Adverse Event', scope:'Germany · de_DE', type:'AI with Offline Fallback'},
+    {name:'Global PHI / Personal Data', scope:'Universal', type:'AI with Offline Fallback'},
+    {name:'Profanity & Restricted Language', scope:'Universal', type:'Offline Only'},
+    {name:'Japan Promotional Claims', scope:'Japan · ja_JP', type:'AI Only'},
+  ];
+
+  // open-text fields per object (Visit Engagement channel)
+  const fieldsByEntity = {
+    'Visit':['Visit Notes','Next Visit Objective','Call Objective'],
+    'Provider Visit':['Next Provider Visit Objective','Discussion Notes','Follow-up Notes'],
+    'Call':['Discussion Summary','Key Message Notes'],
+    'Account':['Account Notes','Compliance Remarks'],
+    'Medical Inquiry':['Inquiry Text','Response Notes'],
+    'Event':['Event Description','Attendee Notes']
+  };
+
+  // channel drives whether an object applies and which fields can be screened
+  const channelModel = {
+    'Visit Engagement': {objects:['Visit','Provider Visit','Call','Account','Medical Inquiry','Event']},
+    'Visit Agent':      {objects:null, fields:['User Utterance']},
+    'Field Email':      {objects:null, fields:['Email Body']},
+    'Agentforce':       {objects:null, fields:['Agent Utterance','Agent Response']}
+  };
+
+  // sample customer-configured severity values; platform-fixed outcomes
+  const SEVERITIES = ['Critical','High','Medium','Low'];
+  const OUTCOMES = ['Block','Warn','Allow'];
+  // baseline map inherited from Compliance Settings
+  const defaultSev = [['Critical','Block'],['High','Warn'],['Medium','Warn'],['Low','Allow']];
+
+  // seed mapped fields
+  const mapped = [
+    {channel:'Visit Engagement', entity:'Provider Visit', field:'Next Provider Visit Objective', mode:'AI with Offline Fallback', policies:['US Off-Label Promotion','Global PHI / Personal Data'], sev:[['Critical','Block'],['High','Block'],['Medium','Warn'],['Low','Allow']], on:true, log:true},
+    {channel:'Visit Engagement', entity:'Visit', field:'Visit Notes', mode:'AI with Offline Fallback', policies:['Global PHI / Personal Data','Profanity & Restricted Language'], sev:[['Critical','Block'],['High','Warn'],['Medium','Allow'],['Low','Allow']], on:true, log:true},
+    {channel:'Visit Agent', entity:'', field:'User Utterance', mode:'AI Only', policies:['US Off-Label Promotion','EU Pharmacovigilance / Adverse Event'], sev:[['Critical','Block'],['High','Warn'],['Medium','Warn'],['Low','Allow']], on:true, log:false},
+  ];
+
+  function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+  function oc(v){ return `<span class="oc-${v.toLowerCase()}">${v}</span>`; }
+  function sevMap(pairs){
+    if(!pairs || !pairs.length) return '<span style="color:#8a8a8a">— none —</span>';
+    return `<div class="sevmap">` + pairs.map(([s,o])=>`<b>${esc(s)}</b>▸${oc(o)}`).join(' · ') + `</div>`;
+  }
+  function render(){
+    document.getElementById('rows').innerHTML = mapped.map((m,i)=>{
+      const chips = m.policies.map(p=>`<span class="chip">${esc(p)}</span>`).join(' ');
+      const status = m.on ? '<span class="badge on"><span class="dot g"></span>Enabled</span>' : '<span class="badge off"><span class="dot k"></span>Disabled</span>';
+      const obj = m.entity ? `<strong>${esc(m.entity)}</strong>` : '<span style="color:#8a8a8a">—</span>';
+      return `<tr>
+        <td>${esc(m.channel)}</td>
+        <td>${obj}</td>
+        <td><a class="rec" href="#" onclick="editField(${i});return false;">${esc(m.field)}</a></td>
+        <td>${esc(m.mode)}</td>
+        <td><div class="chips">${chips}</div></td>
+        <td>${sevMap(m.sev || defaultSev)}</td>
+        <td>${status}</td>
+        <td><a class="rec" href="#" onclick="editField(${i});return false;">Edit</a></td>
+      </tr>`;
+    }).join('');
+    document.getElementById('count').textContent = mapped.length + ' items';
+  }
+  render();
+
+  let editingIndex = null;
+
+  // channel is the first selection; it governs the object and field pickers
+  function loadChannel(){
+    const ch = document.getElementById('f_channel').value;
+    const objSel = document.getElementById('f_entity');
+    const fldSel = document.getElementById('f_field');
+    const objReq = document.getElementById('objReq');
+    const model = channelModel[ch];
+    if(!ch || !model){
+      objSel.disabled = true; objSel.innerHTML = '<option value="">— Select Channel first —</option>';
+      fldSel.disabled = true; fldSel.innerHTML = '<option>— Select Channel first —</option>';
+      objReq.style.display = '';
+      return;
+    }
+    if(model.objects){
+      // channel with objects (Visit Engagement): pick object, then its fields
+      objReq.style.display = '';
+      objSel.disabled = false;
+      objSel.innerHTML = '<option value="">— Select Object —</option>' + model.objects.map(o=>`<option>${esc(o)}</option>`).join('');
+      loadFields();
+    } else {
+      // object-less channel: no object, channel supplies the field list directly
+      objReq.style.display = 'none';
+      objSel.value = '';
+      objSel.disabled = true;
+      objSel.innerHTML = '<option value="">— Not applicable —</option>';
+      fldSel.disabled = false;
+      fldSel.innerHTML = (model.fields||[]).map(f=>`<option>${esc(f)}</option>`).join('');
+    }
+  }
+
+  function loadFields(){
+    const e = document.getElementById('f_entity').value;
+    const sel = document.getElementById('f_field');
+    if(!e){ sel.disabled=true; sel.innerHTML='<option>— Select Object first —</option>'; return; }
+    sel.disabled=false;
+    sel.innerHTML = (fieldsByEntity[e]||[]).map(f=>`<option>${esc(f)}</option>`).join('');
+  }
+
+  function typeTag(t){
+    const map = {
+      'AI Only':['AI','ai'],
+      'Offline Only':['Offline','offline'],
+      'AI with Offline Fallback':['AI + Offline','fallback']
+    };
+    const [label, cls] = map[t] || ['AI + Offline','fallback'];
+    return `<span class="ptag ptag-${cls}" title="${esc(t)}">${label}</span>`;
+  }
+  function renderPolicyPicks(selected){
+    const set = new Set(selected||[]);
+    document.getElementById('policyPicks').innerHTML = allPolicies.map(p=>
+      `<label><input type="checkbox" value="${esc(p.name)}" ${set.has(p.name)?'checked':''} />
+        <span><span style="color:#0b5cab">${esc(p.name)}</span> ${typeTag(p.type)}<br><span class="pmeta">${esc(p.scope)}</span></span></label>`).join('');
+  }
+  function optionList(values, selected){
+    return values.map(v => `<option${v===selected?' selected':''}>${esc(v)}</option>`).join('');
+  }
+  function makeMappingRow(sev, out){
+    const row = document.createElement('div');
+    row.className = 'sevmaprow';
+    row.innerHTML =
+      `<select class="selectbox sev-severity">${optionList(SEVERITIES, sev)}</select>`
+      + `<span class="arrow">→</span>`
+      + `<select class="selectbox sev-outcome">${optionList(OUTCOMES, out)}</select>`
+      + `<button type="button" class="rowdel" title="Remove mapping" onclick="removeMappingRow(this)">✕</button>`;
+    return row;
+  }
+  function addMappingRow(){
+    document.getElementById('sevMap').appendChild(makeMappingRow(SEVERITIES[0], OUTCOMES[0]));
+  }
+  function removeMappingRow(btn){
+    const row = btn.closest('.sevmaprow');
+    if(row) row.remove();
+  }
+  function setSev(pairs){
+    const wrap = document.getElementById('sevMap');
+    wrap.innerHTML = '';
+    (pairs && pairs.length ? pairs : defaultSev).forEach(([s,o]) => wrap.appendChild(makeMappingRow(s, o)));
+  }
+  function readSev(){
+    return [...document.querySelectorAll('#sevMap .sevmaprow')].map(r => [
+      r.querySelector('.sev-severity').value,
+      r.querySelector('.sev-outcome').value
+    ]);
+  }
+
+  function openModal(){
+    editingIndex = null;
+    document.getElementById('modalTitle').textContent = 'New Monitored Field';
+    document.getElementById('f_channel').value='';
+    loadChannel();
+    document.getElementById('f_mode').selectedIndex = 0;
+    document.getElementById('f_enabled').checked = true;
+    document.getElementById('f_logging').checked = true;
+    setSev(defaultSev);
+    renderPolicyPicks([]);
+    document.getElementById('overlay').classList.remove('hidden');
+  }
+
+  function editField(i){
+    const m = mapped[i];
+    editingIndex = i;
+    document.getElementById('modalTitle').textContent = 'Edit Monitored Field';
+    // channel drives the object/field pickers — set it first, then repopulate
+    document.getElementById('f_channel').value = m.channel || '';
+    loadChannel();
+    if(m.entity){ document.getElementById('f_entity').value = m.entity; loadFields(); }
+    document.getElementById('f_field').value = m.field;
+    setSelectByText('f_mode', m.mode);
+    document.getElementById('f_enabled').checked = !!m.on;
+    document.getElementById('f_logging').checked = m.log !== false;
+    setSev(m.sev || defaultSev);
+    renderPolicyPicks(m.policies || []);
+    document.getElementById('overlay').classList.remove('hidden');
+  }
+
+  function setSelectByText(id, text){
+    const sel = document.getElementById(id);
+    for(const o of sel.options){ if(o.textContent === text || o.value === text){ sel.value = o.value; return; } }
+  }
+
+  function closeModal(){ document.getElementById('overlay').classList.add('hidden'); editingIndex = null; }
+
+  function saveField(){
+    const channel = document.getElementById('f_channel').value;
+    const entity = document.getElementById('f_entity').value;
+    const field = document.getElementById('f_field').value;
+    if(!channel){ alert('Channel is required.'); return; }
+    const needsObject = !!(channelModel[channel] && channelModel[channel].objects);
+    if(needsObject && !entity){ alert('Object is required for this channel.'); return; }
+    if(!field){ alert('Field is required.'); return; }
+    const picks = [...document.querySelectorAll('#policyPicks input:checked')].map(c=>c.value);
+    if(picks.length===0){ alert('Apply at least one policy.'); return; }
+    const sev = readSev();
+    const record = {channel, entity, field, mode:document.getElementById('f_mode').value, policies:picks, sev, on:document.getElementById('f_enabled').checked, log:document.getElementById('f_logging').checked};
+    if(editingIndex !== null){ mapped[editingIndex] = record; }
+    else { mapped.unshift(record); }
+    render();
+    closeModal();
+  }
+</script>
+</body>
+</html>

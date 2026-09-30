@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Open Text Compliance — Policies</title>
+<link rel="stylesheet" href="_shared.css" />
+</head>
+<body>
+
+  <!-- global header -->
+  <header class="global-header">
+    <div class="logo"><span class="swirl"></span>Cumulus</div>
+    <div class="search-wrap"><input class="global-search" placeholder="Search..." /><button class="ask-btn"><span class="spark">✦</span> Ask</button></div>
+    <div class="header-icons"><span class="hicon">☺</span><span class="hicon">★</span><span class="hicon">＋</span><span class="hicon">☁</span><span class="hicon">?</span><span class="hicon">⚙</span><span class="hicon">🔔</span><span class="avatar">NP</span></div>
+  </header>
+
+  <!-- app nav -->
+  <nav class="app-nav">
+    <span class="app-name">Life Sciences Commercial</span>
+    <div class="nav-tabs">
+      <span class="nav-tab">Home</span><span class="nav-tab">Chatter</span>
+      <a class="nav-tab active" href="admin-console.html">Admin Console</a>
+      <span class="nav-tab">Accounts</span><span class="nav-tab">Calendar</span>
+      <span class="nav-tab">Visits <span class="caret">▾</span></span>
+      <span class="nav-tab">Intelligent Content</span>
+      <span class="nav-tab">Inquiries <span class="caret">▾</span></span>
+      <span class="nav-tab">Account Plans <span class="caret">▾</span></span>
+      <span class="nav-tab">More <span class="caret">▾</span></span>
+    </div>
+    <span class="nav-edit">✎</span>
+  </nav>
+
+  <div class="shell">
+    <aside class="rail">
+      <div class="rail-search"><input placeholder="Quick Find" /></div>
+      <a class="rail-item" href="compliance-settings.html">Compliance Settings</a>
+      <a class="rail-item active" href="policies.html">Policies</a>
+      <a class="rail-item" href="monitored-fields.html">Monitored Fields</a>
+      <a class="rail-item" href="violation-log.html">Violation Log</a>
+    </aside>
+
+    <main class="content">
+      <div class="setup-header">
+        <span class="setup-ic">🛡</span>
+        <div><div class="setup-eyebrow">Setup · Open Text Compliance</div><div class="setup-title">Policies</div></div>
+      </div>
+
+      <div class="list-head">
+        <span class="count" id="count"></span>
+        <span class="spacer"></span>
+        <button class="btn primary" onclick="openModal()">＋ New Policy</button>
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th style="width:16%">Policy Name</th>
+              <th style="width:12%">Type</th>
+              <th>Applies To</th>
+              <th>Country</th>
+              <th>Language</th>
+              <th>Resolve By</th>
+              <th>Grounding Doc</th>
+              <th>Keywords / Phrases</th>
+              <th>Effective</th>
+              <th>Status</th>
+              <th style="width:60px"></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="hint" style="padding:12px 2px;">A policy with no country <em>and</em> no language is <strong>universally applicable</strong> whenever it is enabled. Country/language-scoped policies apply only when the resolved jurisdiction matches.</div>
+      </div>
+    </main>
+  </div>
+
+  <div class="env-note">TM · SPC · San Francisco North 20D02T11</div>
+
+  <!-- ============ NEW POLICY MODAL ============ -->
+  <div class="overlay hidden" id="overlay">
+    <div class="modal">
+      <header><span id="modalTitle">New Policy</span> <span class="close" onclick="closeModal()">✕</span></header>
+      <div class="mbody">
+        <div class="grid2">
+          <div class="fld span2">
+            <div class="field"><label>Policy Name <span class="req">*</span></label>
+              <input class="textbox" id="f_name" placeholder="e.g., US Off-Label Promotion" /></div>
+          </div>
+          <div class="fld span2">
+            <div class="field"><label>Description</label>
+              <textarea class="textbox" id="f_desc" rows="2" placeholder="What this policy detects and why."></textarea></div>
+          </div>
+
+          <div class="fld span2">
+            <div class="field"><label>Type</label>
+              <select class="selectbox" id="f_type" onchange="onType()">
+                <option>AI with Offline Fallback</option>
+                <option>AI Only</option>
+                <option>Offline Only</option>
+              </select>
+              <div class="hint">How this policy is evaluated. <strong>AI</strong> uses the LLM against the grounding document; <strong>Offline</strong> uses the keyword/phrase terms below on-device. Fallback runs the AI online and the terms when the rep is offline.</div></div>
+          </div>
+
+          <div class="fld">
+            <div class="field"><label>Start Date</label>
+              <input class="textbox" type="date" id="f_start" />
+              <div class="hint">Leave blank to be in force immediately.</div></div>
+          </div>
+          <div class="fld">
+            <div class="field"><label>End Date</label>
+              <input class="textbox" type="date" id="f_end" />
+              <div class="hint">Leave blank for no end (ongoing).</div></div>
+          </div>
+
+          <!-- Audience scope -->
+          <div class="fld span2">
+            <div class="field"><label>Applies To (Audience)</label>
+              <select class="selectbox" id="f_applies" onchange="onApplies()">
+                <option value="org">All Users (org default)</option>
+                <option value="profile">Specific Profiles</option>
+                <option value="user">Specific Users</option>
+              </select>
+              <div class="hint">Whether this policy applies to everyone, or only to selected profiles (e.g., Field Rep, MSL, KAM) or named users. This is the <em>who</em> — separate from the country/language <em>where</em> below.</div>
+            </div>
+          </div>
+          <div class="fld span2 hidden" id="profileWrap">
+            <div class="field"><label>Profiles</label>
+              <div class="picklist" id="profilePicks">
+                <label><input type="checkbox" value="Field Rep" /><span>Field Rep</span></label>
+                <label><input type="checkbox" value="MSL" /><span>Medical Science Liaison (MSL)</span></label>
+                <label><input type="checkbox" value="KAM" /><span>Key Account Manager (KAM)</span></label>
+                <label><input type="checkbox" value="Sales Manager" /><span>Sales Manager</span></label>
+                <label><input type="checkbox" value="Compliance Reviewer" /><span>Compliance Reviewer</span></label>
+              </div>
+            </div>
+          </div>
+          <div class="fld span2 hidden" id="userWrap">
+            <div class="field"><label>Users</label>
+              <div class="picklist" id="userPicks">
+                <label><input type="checkbox" value="Alex Rivera" /><span>Alex Rivera <span class="pmeta">· Field Rep</span></span></label>
+                <label><input type="checkbox" value="Dana Kim" /><span>Dana Kim <span class="pmeta">· MSL</span></span></label>
+                <label><input type="checkbox" value="Sam Osei" /><span>Sam Osei <span class="pmeta">· KAM</span></span></label>
+                <label><input type="checkbox" value="Priya Nair" /><span>Priya Nair <span class="pmeta">· Sales Manager</span></span></label>
+              </div>
+            </div>
+          </div>
+
+          <div class="fld">
+            <div class="field"><label>Country</label>
+              <select class="selectbox" id="f_country">
+                <option value="">— All Countries (universal) —</option>
+                <option>United States</option><option>Canada</option><option>United Kingdom</option>
+                <option>Germany</option><option>France</option><option>Japan</option><option>Brazil</option>
+              </select>
+              <div class="hint">Leave blank for a universal policy.</div></div>
+          </div>
+          <div class="fld">
+            <div class="field"><label>Language</label>
+              <select class="selectbox" id="f_lang">
+                <option value="">— All Languages (universal) —</option>
+                <option>English (en_US)</option><option>English (en_GB)</option>
+                <option>German (de_DE)</option><option>French (fr_FR)</option>
+                <option>Japanese (ja_JP)</option><option>Portuguese (pt_BR)</option>
+              </select></div>
+          </div>
+
+          <div class="fld span2">
+            <div class="field"><label>Determine Applicability By</label>
+              <select class="selectbox" id="f_basis">
+                <option>User (rep) country &amp; language</option>
+                <option>Account (HCP) country &amp; language</option>
+                <option>Custom rule</option>
+              </select>
+              <div class="hint">At run time, this is the jurisdiction compared against the policy's country/language to decide whether the policy applies.</div></div>
+          </div>
+
+          <!-- Grounding document -->
+          <div class="fld span2" id="groundingBlock">
+            <div class="field"><label>Grounding Document (PDF / TXT)</label>
+              <div class="upload" id="dropzone" onclick="document.getElementById('f_file').click()">
+                <div class="big">⬆</div>
+                <div>Click to upload an SOP / PI document</div>
+                <div class="hint" style="margin-top:4px;">Added to the Document Library and indexed for RAG grounding.</div>
+              </div>
+              <input type="file" id="f_file" accept=".pdf,.txt" class="hidden" onchange="onFile(this)" />
+              <div id="fileRow"></div>
+            </div>
+          </div>
+
+          <!-- Keywords / phrases -->
+          <div class="fld span2" id="keywordsBlock">
+            <div class="field"><label>Keywords / Key Phrases</label>
+              <div class="hint" style="margin:-2px 0 6px;">Used primarily for <strong>offline</strong> static/regex matching when the AI can't be reached. Each term carries a <strong>severity</strong>, which the monitored field's severity → outcome map turns into a block, warn, or allow. Add one or more.</div>
+              <div class="addrow">
+                <select class="selectbox" id="kw_type"><option>Keyword</option><option>Phrase</option><option>Regex</option></select>
+                <input class="textbox" id="kw_val" placeholder="e.g., cure, guaranteed results, \boff-label\b" onkeydown="if(event.key==='Enter'){event.preventDefault();addKw();}" />
+                <select class="selectbox" id="kw_sev" title="Severity"><option>Critical</option><option>High</option><option selected>Medium</option><option>Low</option></select>
+                <button class="btn sm" type="button" onclick="addKw()">Add</button>
+              </div>
+              <div class="chips" id="kwChips" style="margin-top:10px;"></div>
+            </div>
+          </div>
+
+          <div class="fld span2">
+            <label style="display:flex;gap:10px;align-items:center;font-weight:400;color:#181818;">
+              <input type="checkbox" id="f_enabled" checked style="accent-color:var(--slds-blue);width:16px;height:16px;" />
+              Enabled
+            </label>
+          </div>
+        </div>
+      </div>
+      <footer>
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn primary" onclick="savePolicy()">Save Policy</button>
+      </footer>
+    </div>
+  </div>
+
+<script>
+  // ---- seed data ----
+  const policies = [
+    {name:'US Off-Label Promotion', desc:'Detects promotion of unapproved uses and unsubstantiated efficacy claims.', type:'AI with Offline Fallback', start:'2026-01-01', end:'', applies:{mode:'profile',values:['Field Rep']}, country:'United States', lang:'English (en_US)', basis:'User', doc:'us-off-label-sop.pdf', kwList:[{t:'Keyword',v:'off-label',sev:'Critical'},{t:'Phrase',v:'guaranteed cure',sev:'Critical'},{t:'Regex',v:'\\bunapproved use\\b',sev:'High'}], prompt:'OpenText_Compliance_US_OffLabel', on:true},
+    {name:'EU Pharmacovigilance / Adverse Event', desc:'Flags adverse-event and side-effect language requiring PV reporting.', type:'AI with Offline Fallback', start:'2026-03-01', end:'', applies:{mode:'profile',values:['MSL','Field Rep']}, country:'Germany', lang:'German (de_DE)', basis:'User', doc:'eu-pv-sop.pdf', kwList:[{t:'Keyword',v:'adverse event',sev:'Critical'},{t:'Keyword',v:'side effect',sev:'High'},{t:'Phrase',v:'patient reported',sev:'Medium'},{t:'Regex',v:'\\bSAE\\b',sev:'Critical'}], prompt:'OpenText_Compliance_EU_PV', on:true},
+    {name:'Global PHI / Personal Data', desc:'Detects protected health information / personal identifiers in free text.', type:'AI with Offline Fallback', start:'', end:'', applies:{mode:'org'}, country:'', lang:'', basis:'User', doc:'phi-guidance.txt', kwList:[{t:'Keyword',v:'SSN',sev:'Critical'},{t:'Keyword',v:'date of birth',sev:'High'},{t:'Phrase',v:'medical record number',sev:'High'},{t:'Regex',v:'\\d{3}-\\d{2}-\\d{4}',sev:'Critical'},{t:'Keyword',v:'diagnosis',sev:'Medium'}], prompt:'OpenText_Compliance_PHI', on:true},
+    {name:'Profanity & Restricted Language', desc:'Blocks profane or otherwise restricted language in customer-facing notes.', type:'Offline Only', start:'2025-06-01', end:'', applies:{mode:'org'}, country:'', lang:'', basis:'User', doc:'', kwList:[{t:'Keyword',v:'damn',sev:'Low'},{t:'Keyword',v:'idiot',sev:'Medium'},{t:'Regex',v:'\\bWTF\\b',sev:'Medium'}], prompt:'OpenText_Compliance_Generic', on:true},
+    {name:'Japan Promotional Claims', desc:'Reviews promotional claims against Japan advertising codes.', type:'AI Only', start:'2026-01-01', end:'2026-12-31', applies:{mode:'profile',values:['KAM']}, country:'Japan', lang:'Japanese (ja_JP)', basis:'Account (HCP)', doc:'jp-promo-sop.pdf', kwList:[], prompt:'OpenText_Compliance_Generic', on:false},
+  ];
+
+  function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+  function appliesLabel(a){
+    if(!a || a.mode==='org') return '<span class="badge universal">All Users</span>';
+    const label = a.mode==='profile' ? 'Profiles' : 'Users';
+    const vals = (a.values||[]).map(esc).join(', ') || '—';
+    return `<span style="font-size:12px"><span style="color:#706e6b">${label}:</span> ${vals}</span>`;
+  }
+  function render(){
+    const body = document.getElementById('rows');
+    body.innerHTML = policies.map((p,i)=>{
+      const country = p.country || '<span class="badge universal">Universal</span>';
+      const lang = p.lang || '<span class="badge universal">All</span>';
+      const doc = p.doc ? '📄 '+esc(p.doc) : '<span style="color:#8a8a8a">— none —</span>';
+      const status = p.on ? '<span class="badge on"><span class="dot g"></span>Enabled</span>' : '<span class="badge off"><span class="dot k"></span>Disabled</span>';
+      const n = (p.kwList||[]).length;
+      const dates = (p.start || p.end)
+        ? `${esc(p.start || '—')} → ${esc(p.end || 'ongoing')}`
+        : '<span style="color:#8a8a8a">— any —</span>';
+      return `<tr>
+        <td><a class="rec" href="#" onclick="editPolicy(${i});return false;">${esc(p.name)}</a></td>
+        <td>${esc(p.type || 'AI with Offline Fallback')}</td>
+        <td>${appliesLabel(p.applies)}</td>
+        <td>${country}</td><td>${lang}</td>
+        <td>${esc(p.basis)}</td>
+        <td>${doc}</td>
+        <td>${n} term${n===1?'':'s'}</td>
+        <td style="font-size:12px;white-space:nowrap">${dates}</td>
+        <td>${status}</td>
+        <td><a class="rec" href="#" onclick="editPolicy(${i});return false;">Edit</a></td>
+      </tr>`;
+    }).join('');
+    document.getElementById('count').textContent = policies.length + ' items';
+  }
+  render();
+
+  // ---- modal ----
+  let kws = [];
+  let editingIndex = null;
+  let currentDoc = '';
+
+  function openModal(){
+    editingIndex = null;
+    document.getElementById('modalTitle').textContent = 'New Policy';
+    document.getElementById('f_name').value = '';
+    document.getElementById('f_desc').value = '';
+    document.getElementById('f_type').selectedIndex = 0;
+    onType();
+    document.getElementById('f_start').value = '';
+    document.getElementById('f_end').value = '';
+    document.getElementById('f_country').value = '';
+    document.getElementById('f_lang').value = '';
+    document.getElementById('f_basis').selectedIndex = 0;
+    document.getElementById('f_enabled').checked = true;
+    document.getElementById('f_file').value = '';
+    currentDoc = '';
+    kws=[]; renderKw();
+    document.getElementById('fileRow').innerHTML='';
+    document.getElementById('f_applies').value='org';
+    document.querySelectorAll('#profilePicks input, #userPicks input').forEach(c=>c.checked=false);
+    onApplies();
+    document.getElementById('overlay').classList.remove('hidden');
+  }
+
+  const basisToOption = {'User':'User (rep) country & language','Account (HCP)':'Account (HCP) country & language','Custom':'Custom rule'};
+  function setSelectByText(id, text){
+    const sel = document.getElementById(id);
+    for(const o of sel.options){ if(o.textContent === text || o.value === text){ sel.value = o.value; return; } }
+  }
+
+  function editPolicy(i){
+    const p = policies[i];
+    editingIndex = i;
+    document.getElementById('modalTitle').textContent = 'Edit Policy';
+    document.getElementById('f_name').value = p.name;
+    document.getElementById('f_desc').value = p.desc || '';
+    setSelectByText('f_type', p.type || 'AI with Offline Fallback');
+    onType();
+    document.getElementById('f_start').value = p.start || '';
+    document.getElementById('f_end').value = p.end || '';
+    document.getElementById('f_country').value = p.country || '';
+    document.getElementById('f_lang').value = p.lang || '';
+    setSelectByText('f_basis', basisToOption[p.basis] || 'User (rep) country & language');
+    document.getElementById('f_enabled').checked = !!p.on;
+
+    // audience
+    document.getElementById('f_applies').value = (p.applies && p.applies.mode) || 'org';
+    document.querySelectorAll('#profilePicks input, #userPicks input').forEach(c=>c.checked=false);
+    if(p.applies && p.applies.mode==='profile'){
+      document.querySelectorAll('#profilePicks input').forEach(c=>{ if(p.applies.values.includes(c.value)) c.checked=true; });
+    } else if(p.applies && p.applies.mode==='user'){
+      document.querySelectorAll('#userPicks input').forEach(c=>{ if(p.applies.values.includes(c.value)) c.checked=true; });
+    }
+    onApplies();
+
+    // keywords
+    kws = (p.kwList || []).map(k=>({t:k.t, v:k.v, sev:k.sev || 'Medium'}));
+    renderKw();
+
+    // document
+    document.getElementById('f_file').value = '';
+    currentDoc = p.doc || '';
+    document.getElementById('fileRow').innerHTML = currentDoc
+      ? `<div class="filerow">📄 ${esc(currentDoc)} <span class="rag">✓ indexed in Document Library (RAG)</span><span class="rm" onclick="clearFile()">Remove</span></div>`
+      : '';
+
+    document.getElementById('overlay').classList.remove('hidden');
+  }
+
+  function closeModal(){ document.getElementById('overlay').classList.add('hidden'); editingIndex=null; }
+
+  function onApplies(){
+    const v = document.getElementById('f_applies').value;
+    document.getElementById('profileWrap').classList.toggle('hidden', v!=='profile');
+    document.getElementById('userWrap').classList.toggle('hidden', v!=='user');
+  }
+
+  // policy type governs which evidence the policy carries:
+  // Offline Only → keywords only · AI Only → grounding doc only · Fallback → both
+  function onType(){
+    const t = document.getElementById('f_type').value;
+    const showGround = (t === 'AI Only' || t === 'AI with Offline Fallback');
+    const showKw = (t === 'Offline Only' || t === 'AI with Offline Fallback');
+    document.getElementById('groundingBlock').classList.toggle('hidden', !showGround);
+    document.getElementById('keywordsBlock').classList.toggle('hidden', !showKw);
+  }
+
+  function addKw(){
+    const t = document.getElementById('kw_type').value;
+    const v = document.getElementById('kw_val').value.trim();
+    const sev = document.getElementById('kw_sev').value;
+    if(!v) return;
+    kws.push({t, v, sev});
+    document.getElementById('kw_val').value='';
+    renderKw();
+  }
+  function removeKw(i){ kws.splice(i,1); renderKw(); }
+  function renderKw(){
+    document.getElementById('kwChips').innerHTML = kws.map((k,i)=>
+      `<span class="chip"><span class="kty">${k.t}</span>${esc(k.v)}<span class="ksev sev-${(k.sev||'Medium').toLowerCase()}">${esc(k.sev||'Medium')}</span><span class="x" onclick="removeKw(${i})">✕</span></span>`).join('')
+      || '<span class="hint">No keywords added yet.</span>';
+  }
+
+  function onFile(input){
+    const f = input.files[0]; if(!f) return;
+    currentDoc = f.name;
+    document.getElementById('fileRow').innerHTML =
+      `<div class="filerow">📄 ${esc(f.name)} <span class="rag">✓ will be indexed to Document Library (RAG)</span>
+        <span class="rm" onclick="clearFile()">Remove</span></div>`;
+  }
+  function clearFile(){ document.getElementById('f_file').value=''; currentDoc=''; document.getElementById('fileRow').innerHTML=''; }
+
+  function savePolicy(){
+    const name = document.getElementById('f_name').value.trim();
+    if(!name){ alert('Policy Name is required.'); return; }
+    const country = document.getElementById('f_country').value;
+    const lang = document.getElementById('f_lang').value;
+    const basisFull = document.getElementById('f_basis').value;
+    const basis = basisFull.startsWith('User') ? 'User' : basisFull.startsWith('Account') ? 'Account (HCP)' : 'Custom';
+    const applyMode = document.getElementById('f_applies').value;
+    const applies = {mode: applyMode, values: []};
+    if(applyMode==='profile') applies.values = [...document.querySelectorAll('#profilePicks input:checked')].map(c=>c.value);
+    if(applyMode==='user') applies.values = [...document.querySelectorAll('#userPicks input:checked')].map(c=>c.value);
+    if(applyMode!=='org' && applies.values.length===0){ alert('Select at least one '+(applyMode==='profile'?'profile':'user')+', or choose All Users.'); return; }
+    const start = document.getElementById('f_start').value;
+    const end = document.getElementById('f_end').value;
+    if(start && end && end < start){ alert('End Date must be on or after Start Date.'); return; }
+    const type = document.getElementById('f_type').value;
+    // keep only the evidence relevant to the type
+    const doc = (type === 'Offline Only') ? '' : currentDoc;
+    const kwList = (type === 'AI Only') ? [] : kws.map(k=>({t:k.t, v:k.v, sev:k.sev || 'Medium'}));
+    const record = {
+      name,
+      desc: document.getElementById('f_desc').value.trim(),
+      type,
+      start, end,
+      applies, country, lang, basis,
+      doc,
+      kwList,
+      on: document.getElementById('f_enabled').checked
+    };
+    if(editingIndex !== null){ policies[editingIndex] = record; }
+    else { policies.unshift(record); }
+    render();
+    closeModal();
+  }
+</script>
+</body>
+</html>

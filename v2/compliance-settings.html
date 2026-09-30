@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Open Text Compliance — Setup</title>
+<style>
+  :root{
+    --slds-blue:#0176d3; --slds-link:#0b5cab; --navy:#0b2a5b; --label:#16325c;
+    --text:#181818; --muted:#5c5c5c; --border:#e5e5e5; --field-border:#c9c9c9;
+    --rail-active:#eef5fd;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:#fff;color:var(--text);
+    font-family:"Salesforce Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:13px;-webkit-font-smoothing:antialiased;}
+  a{color:inherit;text-decoration:none;}
+
+  /* ---- global header ---- */
+  .global-header{display:flex;align-items:center;height:50px;padding:0 16px;border-bottom:1px solid var(--border);gap:14px;}
+  .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:20px;font-style:italic;color:#16171b;}
+  .logo .swirl{width:26px;height:26px;border-radius:50%;background:conic-gradient(from 210deg,#1b96ff,#0b5cab,#032d60,#1b96ff);position:relative;}
+  .logo .swirl::after{content:"";position:absolute;inset:7px;border-radius:50%;background:#fff;}
+  .search-wrap{flex:1;display:flex;justify-content:center;gap:10px;align-items:center;}
+  .global-search{width:420px;max-width:44vw;height:32px;border:1px solid var(--field-border);border-radius:18px;padding:0 14px 0 34px;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23747474' stroke-width='2'><circle cx='11' cy='11' r='7'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>") no-repeat 11px center;font-size:13px;}
+  .ask-btn{height:32px;padding:0 14px;border:1px solid var(--field-border);border-radius:18px;background:#fff;color:#032d60;font-weight:600;display:inline-flex;align-items:center;gap:6px;cursor:pointer;}
+  .ask-btn .spark{color:#1b96ff;}
+  .header-icons{display:flex;align-items:center;gap:14px;}
+  .header-icons .hicon{width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;color:#706e6b;font-size:15px;}
+  .header-icons .avatar{width:30px;height:30px;border-radius:50%;background:#032d60;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:600;}
+
+  /* ---- app nav ---- */
+  .app-nav{display:flex;align-items:center;gap:22px;padding:0 18px;height:44px;border-bottom:1px solid var(--border);box-shadow:0 2px 2px rgba(0,0,0,.04);}
+  .app-name{font-weight:700;font-size:17px;color:#16171b;margin-right:8px;}
+  .nav-tabs{display:flex;align-items:center;gap:20px;height:100%;overflow:hidden;}
+  .nav-tab{height:100%;display:inline-flex;align-items:center;gap:5px;font-size:13px;color:#444;white-space:nowrap;cursor:pointer;border-bottom:3px solid transparent;}
+  .nav-tab.active{color:var(--slds-blue);font-weight:600;border-bottom-color:var(--slds-blue);}
+  .nav-tab .caret{font-size:9px;color:#888;}
+  .nav-edit{margin-left:auto;color:#706e6b;}
+
+  /* ---- body layout ---- */
+  .shell{display:flex;min-height:calc(100vh - 94px);}
+  .rail{width:240px;flex-shrink:0;border-right:1px solid var(--border);padding:14px 0;}
+  .rail-search{margin:0 14px 12px;}
+  .rail-search input{width:100%;height:32px;border:1px solid var(--field-border);border-radius:4px;padding:0 10px 0 32px;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%23747474' stroke-width='2'><circle cx='11' cy='11' r='7'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>") no-repeat 9px center;}
+  .rail-item{display:block;padding:9px 18px;font-size:13px;color:var(--slds-link);cursor:pointer;border-left:3px solid transparent;}
+  .rail-item:hover{background:#fafafa;}
+  .rail-item.active{background:var(--rail-active);color:#032d60;font-weight:600;border-left-color:var(--slds-blue);}
+  .rail-item .soon{color:#8a8a8a;font-weight:400;font-size:11px;}
+
+  .content{flex:1;min-width:0;padding:0 0 80px;}
+  .setup-header{display:flex;align-items:center;gap:14px;padding:18px 28px 14px;}
+  .setup-ic{width:42px;height:42px;border-radius:50%;background:#eaf2fb;color:#0b5cab;display:inline-flex;align-items:center;justify-content:center;font-size:20px;}
+  .setup-eyebrow{font-size:12px;color:#706e6b;}
+  .setup-title{font-size:24px;font-weight:600;color:#080707;line-height:1.05;}
+
+  .apply-bar{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:8px 28px 20px;border-bottom:1px solid var(--border);}
+  .field label,.section .fld > label{display:block;font-weight:700;color:var(--label);margin-bottom:6px;font-size:13px;}
+  .selectbox,.textbox{width:100%;height:36px;border:1px solid var(--field-border);border-radius:4px;padding:0 12px;font-size:13px;background:#fff;color:#181818;appearance:none;}
+  select.selectbox{background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23514f4d' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>") no-repeat right 12px center;padding-right:34px;cursor:pointer;}
+  select.selectbox:disabled,.textbox:disabled{background-color:#ecebea;color:#8a8a8a;cursor:not-allowed;}
+  .hint{color:#8a8a8a;font-size:11.5px;margin-top:5px;line-height:1.35;}
+  .hidden{display:none !important;}
+
+  .columns{display:grid;grid-template-columns:1fr 1fr;gap:0;padding:22px 0 0;}
+  .col{padding:0 34px;}
+  .col + .col{border-left:1px solid var(--border);}
+  .section{margin-bottom:30px;}
+  .section h3{font-size:16px;font-weight:700;color:var(--navy);margin:0 0 16px;}
+  .fld{margin-bottom:18px;}
+  .check{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;}
+  .check input{width:16px;height:16px;margin-top:1px;accent-color:var(--slds-blue);}
+  .check .clabel{font-size:13px;color:#181818;}
+  .check .csub{display:block;color:#8a8a8a;font-size:11.5px;margin-top:2px;}
+  .pill{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#fff;background:#5867e8;border-radius:3px;padding:1px 6px;margin-left:8px;vertical-align:middle;}
+  .pill.adv{background:#0b827c;}
+
+  /* severity → outcome mapping builder */
+  .sevrow{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .sevrow .selectbox{height:34px;flex:1;min-width:0;}
+  .sevrow .arrow{color:#8a8a8a;font-size:14px;flex-shrink:0;}
+  .sevrow .rowdel{border:none;background:none;color:#b00020;font-size:14px;cursor:pointer;flex-shrink:0;padding:4px;line-height:1;}
+  .sevrow .rowdel:hover{color:#7a0016;}
+  .sevrow .selectbox:disabled{background-color:#ecebea;color:#8a8a8a;cursor:not-allowed;}
+  .addrow{display:inline-block;margin-top:4px;color:var(--slds-link);font-weight:600;cursor:pointer;font-size:13px;}
+  .addrow:hover{text-decoration:underline;}
+
+  /* action bar */
+  .actionbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:flex-end;gap:10px;background:#f7f7f7;border-top:1px solid var(--border);padding:10px 28px;}
+  .btn{height:34px;padding:0 18px;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--field-border);background:#fff;color:#0b5cab;}
+  .btn.primary{background:var(--slds-blue);border-color:var(--slds-blue);color:#fff;}
+  .env-note{position:fixed;bottom:0;left:0;font-size:11px;color:#8a8a8a;padding:14px 12px;}
+
+  @media(max-width:1150px){.columns{grid-template-columns:1fr;}.col+.col{border-left:none;border-top:1px solid var(--border);padding-top:22px;}.apply-bar{grid-template-columns:1fr;gap:18px;}}
+</style>
+</head>
+<body>
+
+  <!-- global header -->
+  <header class="global-header">
+    <div class="logo"><span class="swirl"></span>Cumulus</div>
+    <div class="search-wrap"><input class="global-search" placeholder="Search..." /><button class="ask-btn"><span class="spark">✦</span> Ask</button></div>
+    <div class="header-icons"><span class="hicon">☺</span><span class="hicon">★</span><span class="hicon">＋</span><span class="hicon">☁</span><span class="hicon">?</span><span class="hicon">⚙</span><span class="hicon">🔔</span><span class="avatar">NP</span></div>
+  </header>
+
+  <!-- app nav -->
+  <nav class="app-nav">
+    <span class="app-name">Life Sciences Commercial</span>
+    <div class="nav-tabs">
+      <span class="nav-tab">Home</span><span class="nav-tab">Chatter</span>
+      <a class="nav-tab active" href="admin-console.html">Admin Console</a>
+      <span class="nav-tab">Accounts</span><span class="nav-tab">Calendar</span>
+      <span class="nav-tab">Visits <span class="caret">▾</span></span>
+      <span class="nav-tab">Intelligent Content</span>
+      <span class="nav-tab">Inquiries <span class="caret">▾</span></span>
+      <span class="nav-tab">Account Plans <span class="caret">▾</span></span>
+      <span class="nav-tab">More <span class="caret">▾</span></span>
+    </div>
+    <span class="nav-edit">✎</span>
+  </nav>
+
+  <div class="shell">
+    <!-- left rail -->
+    <aside class="rail">
+      <div class="rail-search"><input placeholder="Quick Find" /></div>
+      <a class="rail-item active" href="compliance-settings.html">Compliance Settings</a>
+      <a class="rail-item" href="policies.html">Policies</a>
+      <a class="rail-item" href="monitored-fields.html">Monitored Fields</a>
+      <a class="rail-item" href="violation-log.html">Violation Log</a>
+    </aside>
+
+    <!-- content -->
+    <main class="content">
+      <div class="setup-header">
+        <span class="setup-ic">🛡</span>
+        <div><div class="setup-eyebrow">Setup</div><div class="setup-title">Open Text Compliance</div></div>
+      </div>
+
+      <!-- Apply Settings To -->
+      <div class="apply-bar">
+        <div class="field">
+          <label for="applyTo">Apply Settings To</label>
+          <select class="selectbox" id="applyTo" onchange="onApplyChange()">
+            <option value="org">Org Default</option>
+            <option value="profile">Profile</option>
+            <option value="user">User</option>
+          </select>
+          <div class="hint">Org Default is the baseline that applies to every rep. Profile and User settings override the org default for the selected audience (mirrors the LSC config-assignment model).</div>
+        </div>
+        <div class="field hidden" id="targetWrap">
+          <label id="targetLabel" for="targetSel">Select Profile</label>
+          <select class="selectbox" id="targetSel">
+            <option>Select an Option</option>
+            <option>LS Field Sales — US</option>
+            <option>LS Field Sales — EU</option>
+            <option>LS Medical (MSL)</option>
+            <option>Compliance Reviewer</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- two-column form -->
+      <div class="columns">
+
+        <!-- LEFT COLUMN -->
+        <div class="col">
+          <div class="section">
+            <h3>Detection &amp; Validation</h3>
+
+            <div class="check">
+              <input type="checkbox" id="enable" checked onchange="syncEnable()" />
+              <span class="clabel">Enable open-text compliance monitoring
+                <span class="csub">Master switch for AI + offline free-text checks at this scope.</span></span>
+            </div>
+
+            <div class="fld">
+              <label for="mode">Validation Mode</label>
+              <select class="selectbox" id="mode">
+                <option>AI with Offline Fallback</option>
+                <option>AI Only</option>
+                <option>Offline Only</option>
+              </select>
+              <div class="hint">Which engine runs. <span class="pill adv">Advisory AI</span> The LLM detects and explains; the rep decides and edits. A deterministic severity→outcome map governs whether a record can save — no autonomous enforcement or HCP contact.</div>
+            </div>
+
+            <div class="fld">
+              <label for="timing">Validation Timing</label>
+              <select class="selectbox" id="timing">
+                <option>On Field Exit</option>
+                <option>On Save / Submit</option>
+              </select>
+            </div>
+
+            <div class="fld">
+              <label for="offline">Offline Behavior When Not Connected</label>
+              <select class="selectbox" id="offline">
+                <option>Disable field until reconnected</option>
+                <option>Enable with on-device rules</option>
+              </select>
+              <div class="hint">Offline saves are always re-validated online on reconnect and linked back to the original run for audit.</div>
+            </div>
+
+            <div class="check">
+              <input type="checkbox" id="logFailOpen" checked />
+              <span class="clabel">Log fail-open events
+                <span class="csub">Record saves that a timed-out or errored check allowed, so they remain auditable.</span></span>
+            </div>
+            <div class="check">
+              <input type="checkbox" id="logging" checked />
+              <span class="clabel">Enable event &amp; violation logging</span>
+            </div>
+          </div>
+
+          <div class="section">
+            <h3>Jurisdiction &amp; Language</h3>
+
+            <div class="fld">
+              <label for="countryRes">Country Resolution</label>
+              <select class="selectbox" id="countryRes">
+                <option>Account then User (default)</option>
+                <option>User then Account</option>
+                <option>Account Country</option>
+                <option>User Country</option>
+              </select>
+              <div class="hint">Which country selects the applicable rule set. "User Country" applies the rep's own jurisdiction; account-based options apply the HCP's. The chosen jurisdiction is logged on every run.</div>
+            </div>
+
+            <div class="fld">
+              <label for="langSrc">Output Language Source</label>
+              <select class="selectbox" id="langSrc">
+                <option>User Language</option>
+                <option>Account Language</option>
+              </select>
+              <div class="hint">Text is validated in any supported language; findings and messages are shown in this language.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN -->
+        <div class="col">
+          <div class="section">
+            <h3>Default Severity Outcomes</h3>
+            <div class="hint" style="margin:-8px 0 16px;">Baseline map inherited by new monitored fields. Each field can override this under <strong>Monitored Fields</strong>. The policy/LLM assigns the severity; this map governs whether a record can save.</div>
+
+            <div id="sevMap"></div>
+            <a class="addrow" id="addSevBtn" onclick="addMappingRow()">＋ Add severity mapping</a>
+          </div>
+
+          <div class="section">
+            <h3>Grounding</h3>
+            <div class="check">
+              <input type="checkbox" id="ground" onchange="toggleDisable('ground','groundPolicy')" />
+              <span class="clabel">Ground validation in SOP / policy documents
+                <span class="csub">Uses Data Library (RAG) so findings cite the exact policy clause.</span></span>
+            </div>
+            <div class="fld">
+              <label for="groundPolicy">Default Grounding Policy</label>
+              <select class="selectbox" id="groundPolicy" disabled><option>--None--</option><option>Global Promotional Compliance SOP</option><option>US Off-Label Policy</option><option>EU Pharmacovigilance SOP</option></select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="actionbar">
+    <button class="btn" onclick="location.href='admin-console.html'">Cancel</button>
+    <button class="btn primary" onclick="alert('Prototype — settings would be saved for the selected scope.')">Save</button>
+  </div>
+  <div class="env-note">TM · SPC · San Francisco North 20D02T11</div>
+
+<script>
+  function onApplyChange(){
+    const v = document.getElementById('applyTo').value;
+    const wrap = document.getElementById('targetWrap');
+    const lbl = document.getElementById('targetLabel');
+    if(v === 'org'){ wrap.classList.add('hidden'); }
+    else {
+      wrap.classList.remove('hidden');
+      lbl.textContent = (v === 'profile') ? 'Select Profile' : 'Select User';
+    }
+  }
+  function toggleDisable(checkId, targetId){
+    document.getElementById(targetId).disabled = !document.getElementById(checkId).checked;
+  }
+  // master enable dims dependent controls
+  function syncEnable(){
+    const on = document.getElementById('enable').checked;
+    document.querySelectorAll('#mode,#timing,#offline,#countryRes,#langSrc,.sev')
+      .forEach(el => el.disabled = !on);
+    document.querySelectorAll('#logFailOpen,#logging,#ground')
+      .forEach(el => el.disabled = !on);
+    if(on){ toggleDisable('ground','groundPolicy'); } else { document.getElementById('groundPolicy').disabled = true; }
+  }
+
+  /* ---- severity → outcome mapping builder ---- */
+  // Sample customer-configured severity values (in production these come from the org's severity config).
+  const SEVERITIES = ['Critical','High','Medium','Low'];
+  // Platform-fixed outcomes.
+  const OUTCOMES = ['Block','Warn','Allow'];
+  // Seed mappings shown by default.
+  const SEED_MAP = [['Critical','Block'],['High','Warn'],['Medium','Warn'],['Low','Allow']];
+
+  function optionList(values, selected){
+    return values.map(v => `<option${v===selected?' selected':''}>${v}</option>`).join('');
+  }
+  function makeMappingRow(sev, out){
+    const row = document.createElement('div');
+    row.className = 'sevrow';
+    row.innerHTML =
+      `<select class="selectbox sev sev-severity">${optionList(SEVERITIES, sev)}</select>`
+      + `<span class="arrow">→</span>`
+      + `<select class="selectbox sev sev-outcome">${optionList(OUTCOMES, out)}</select>`
+      + `<button type="button" class="rowdel" title="Remove mapping" onclick="removeMappingRow(this)">✕</button>`;
+    return row;
+  }
+  function addMappingRow(){
+    document.getElementById('sevMap').appendChild(makeMappingRow(SEVERITIES[0], OUTCOMES[0]));
+    syncEnable();
+  }
+  function removeMappingRow(btn){
+    const row = btn.closest('.sevrow');
+    if(row) row.remove();
+  }
+  function initSevMap(){
+    const wrap = document.getElementById('sevMap');
+    wrap.innerHTML = '';
+    SEED_MAP.forEach(([s,o]) => wrap.appendChild(makeMappingRow(s, o)));
+  }
+  initSevMap();
+</script>
+</body>
+</html>
